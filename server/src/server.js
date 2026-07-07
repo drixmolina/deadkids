@@ -55,6 +55,16 @@ function safeStringArray(value) {
   return value.map(item => safeString(item)).filter(Boolean);
 }
 
+function safeSizeChart(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map(item => ({
+    size: safeString(item?.size),
+    chest: safeString(item?.chest),
+    length: safeString(item?.length),
+    fit: safeString(item?.fit)
+  })).filter(item => item.size || item.chest || item.length || item.fit);
+}
+
 function safeOrderItems(value) {
   if (!Array.isArray(value)) return [];
   return value.map(item => ({
@@ -92,6 +102,7 @@ function productFromBody(body) {
     description: safeString(body.description),
     price: Math.max(0, safeNumber(body.price)),
     sizes: safeStringArray(body.sizes),
+    size_chart: safeSizeChart(body.size_chart),
     colors: safeStringArray(body.colors),
     stock: Math.max(0, safeNumber(body.stock)),
     images: safeStringArray(body.images),

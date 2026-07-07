@@ -260,7 +260,7 @@ function Navbar({ light, setLight }) {
   const { items } = useCart();
   const [content,setContent]=useState(siteDefaults);
   useEffect(()=>{request('/api/site-content').then(x=>setContent({...siteDefaults,...x})).catch(()=>{})},[]);
-  return <header className="nav customer-nav luxury-nav"><div className="nav-brand-wrap"><Link to="/" className="logo">{content.nav_brand} <span>{content.nav_brand_accent}</span></Link><small>{content.nav_tagline}</small></div><nav><NavLink to="/shop">{content.nav_shop_label}</NavLink><NavLink to="/size-guide">{content.nav_size_label}</NavLink><NavLink to="/reviews">{content.nav_reviews_label}</NavLink><NavLink to="/track">{content.nav_track_label}</NavLink><NavLink to="/contact">{content.nav_contact_label}</NavLink></nav><div className="nav-actions"><button className="icon-btn" aria-label="Toggle theme" onClick={() => setLight(!light)}>{light ? <Moon/> : <Sun/>}</button><Link className="cart-pill" to="/cart"><ShoppingBag size={18}/><span>{items.length}</span></Link></div></header>;
+  return <header className="nav customer-nav luxury-nav"><div className="nav-brand-wrap"><Link to="/" className="logo">{content.nav_brand} <span>{content.nav_brand_accent}</span></Link><small>{content.nav_tagline}</small></div><nav><NavLink to="/shop">{content.nav_shop_label}</NavLink><NavLink to="/reviews">{content.nav_reviews_label}</NavLink><NavLink to="/contact">{content.nav_contact_label}</NavLink></nav><div className="nav-actions"><button className="icon-btn" aria-label="Toggle theme" onClick={() => setLight(!light)}>{light ? <Moon/> : <Sun/>}</button><Link className="cart-pill" to="/cart"><ShoppingBag size={18}/><span>{items.length}</span></Link></div></header>;
 }
 
 function Home() {
@@ -309,17 +309,23 @@ function Marquee(){ return <div className="marquee luxury-marquee"><div>DDKDS CL
 function ProductSection({ title, products }) { return <SectionWithMotionBackground section="products"><section><h2>{title}</h2><div className="grid four">{products.map(p => <ProductCard key={p.id} product={p}/>)}</div></section></SectionWithMotionBackground>; }
 function ProductCard({ product }) {
   const { add } = useCart();
+  const [added, setAdded] = useState(false);
   const isSoldOut = Number(product.stock || 0) <= 0 || product.status === 'Sold Out';
   const isLowStock = !isSoldOut && Number(product.stock || 0) <= 5;
   const badge = isSoldOut ? 'SOLD OUT' : isLowStock ? 'LOW STOCK' : product.limited_drop ? 'LIMITED' : product.best_seller ? 'BEST SELLER' : product.featured ? 'NEW DROP' : 'DDKDS';
   const colors = (product.colors || []).slice(0, 4);
+  const addItem = () => {
+    add(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 900);
+  };
   return <div className={`product card clean-product luxury-product ${isSoldOut ? 'sold-out-card' : ''}`}>
     <span className={`badge product-badge ${isSoldOut ? 'soldout' : ''}`}>{badge}</span>
     <button className="wishlist" title="Wishlist" aria-label="Wishlist"><Heart size={18}/></button>
     <Link to={`/product/${product.id}`}><div className="product-image-wrap"><img src={asset(product.images?.[0])} alt={product.name} loading="lazy" decoding="async"/>{isSoldOut && <div className="sold-overlay">SOLD OUT</div>}</div><h3>{product.name}</h3></Link>
     <div className="product-meta-row"><p className="muted">{product.category}</p>{colors.length > 0 && <div className="swatches" aria-label="Available colors">{colors.map(color => <span key={color} title={color} style={{'--swatch': color.toLowerCase()}} />)}</div>}</div>
     {isLowStock && <p className="low-stock-text">Only {product.stock} left</p>}
-    <div className="between product-buy-row"><strong>{pesos(product.price)}</strong><button disabled={isSoldOut} className="icon-btn red-bg cart-pop" onClick={() => add(product)}>{isSoldOut ? 'Sold' : <ShoppingBag size={18}/>}</button></div>
+    <div className="between product-buy-row"><strong>{pesos(product.price)}</strong><button disabled={isSoldOut} className={`icon-btn red-bg cart-pop add-cart-effect ${added ? 'added' : ''}`} onClick={addItem}>{isSoldOut ? 'Sold' : added ? 'Added' : <ShoppingBag size={18}/>}</button></div>
     <Link to={`/product/${product.id}`} className="quick-view">View Details</Link>
   </div>;
 }
@@ -360,11 +366,31 @@ function ProductImageGallery({ product }) {
   </div>;
 }
 
+const blankSizeRow = size => ({ size, chest: '', length: '', fit: '' });
+function productSizeRows(product) {
+  const saved = Array.isArray(product?.size_chart) ? product.size_chart.filter(row => row.size || row.chest || row.length || row.fit) : [];
+  if (saved.length) return saved;
+  return (product?.sizes?.length ? product.sizes : ['One Size']).map(blankSizeRow);
+}
+
+function ProductSizeChart({ product }) {
+  const rows = productSizeRows(product);
+  return <div className="product-size-template">
+    <div className="size-template-head"><Ruler size={16}/><div><strong>Sizing for this item</strong><small>Measurements are filled by admin per product.</small></div></div>
+    <table><thead><tr><th>Size</th><th>Chest</th><th>Length</th><th>Best fit</th></tr></thead><tbody>{rows.map((row,index)=><tr key={`${row.size}-${index}`}><td>{row.size || '-'}</td><td>{row.chest || '-'}</td><td>{row.length || '-'}</td><td>{row.fit || '-'}</td></tr>)}</tbody></table>
+  </div>;
+}
+
 function ProductDetails() {
-  const { id } = useParams(); const { add } = useCart(); const [p,setP]=useState(null), [size,setSize]=useState(''), [color,setColor]=useState('');
+  const { id } = useParams(); const { add } = useCart(); const [p,setP]=useState(null), [size,setSize]=useState(''), [color,setColor]=useState(''), [added,setAdded]=useState(false);
   useEffect(()=>{request(`/api/products/${id}`).then(x=>{setP(x); setSize(x.sizes?.[0]||''); setColor(x.colors?.[0]||'');});},[id]);
   if(!p) return <main><p>Loading product...</p></main>;
   const isSoldOut = Number(p.stock || 0) <= 0 || p.status === 'Sold Out';
+  const addSelected = () => {
+    add(p,size,color);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1000);
+  };
   return <main>
     <SectionWithMotionBackground section="productDetails">
     <div className="details">
@@ -372,10 +398,10 @@ function ProductDetails() {
       <div className="card">
         <p className="eyebrow">{p.category}</p><h1>{p.name}</h1><h2>{pesos(p.price)}</h2><p>{p.description}</p>
         <label>Size</label><select value={size} onChange={e=>setSize(e.target.value)}>{(p.sizes||[]).map(s=><option key={s}>{s}</option>)}</select>
-        <Link className="size-guide-link" to="/size-guide"><Ruler size={16}/> View Size Guide</Link>
+        <ProductSizeChart product={p}/>
         <label>Color</label><select value={color} onChange={e=>setColor(e.target.value)}>{(p.colors||[]).map(c=><option key={c}>{c}</option>)}</select>
         <p className={isSoldOut ? 'red' : ''}>Stock: {isSoldOut ? 'Sold Out' : p.stock}</p>
-        <button disabled={isSoldOut} className="btn primary" onClick={()=>add(p,size,color)}>{isSoldOut ? 'Sold Out' : 'Add to Cart'}</button>
+        <button disabled={isSoldOut} className={`btn primary add-cart-effect ${added ? 'added' : ''}`} onClick={addSelected}>{isSoldOut ? 'Sold Out' : added ? 'Added to Cart' : 'Add to Cart'}</button>
       </div>
     </div>
     </SectionWithMotionBackground>
@@ -460,7 +486,7 @@ function Track() { const [num,setNum]=useState(''),[order,setOrder]=useState(nul
 function About(){const [c,setC]=useState({about_title:'About DDKDS CLO',about_subtitle:'Modern streetwear, comfort, confidence, and bold fashion.',about_story:'DDKDS CLO is built for people who want clean but bold urban clothing. The brand combines minimalist design, luxury streetwear, grunge details, and Y2K-inspired energy.',mission:'To create premium everyday streetwear that makes customers feel confident.',vision:'To become a recognizable local streetwear brand known for quality, creativity, and strong identity.'}); useEffect(()=>{request('/api/site-content').then(x=>setC({...c,...x})).catch(()=>{})},[]); return <main><SectionWithMotionBackground section="about"><PageTitle title={c.about_title} sub={c.about_subtitle}/><div className="card prose"><h2>Brand Story</h2><p>{c.about_story}</p><h2>Mission</h2><p>{c.mission}</p><h2>Vision</h2><p>{c.vision}</p></div></SectionWithMotionBackground></main>}
 function Contact(){const [f,setF]=useState({name:'',email:'',message:''}); const [c,setC]=useState({contact_title:'Contact',contact_subtitle:'Message DDKDS CLO for orders, collabs, or support.',contact_channels:'Messenger • Instagram DM • WhatsApp • Email'}); useEffect(()=>{request('/api/site-content').then(x=>setC({...c,...x})).catch(()=>{})},[]); const send=async e=>{e.preventDefault(); await request('/api/contact',{method:'POST',body:JSON.stringify(f)}); setF({name:'',email:'',message:''}); alert('Message sent!')}; return <main><PageTitle title={c.contact_title} sub={c.contact_subtitle}/><form onSubmit={send} className="form card"><input required placeholder="Name" value={f.name} onChange={e=>setF({...f,name:e.target.value})}/><input placeholder="Email" value={f.email} onChange={e=>setF({...f,email:e.target.value})}/><textarea required placeholder="Message" value={f.message} onChange={e=>setF({...f,message:e.target.value})}/><button className="btn primary">Send Message</button><p>{c.contact_channels}</p></form></main>}
 function PageTitle({title,sub}){const [c,setC]=useState(siteDefaults);useEffect(()=>{request('/api/site-content').then(x=>setC({...siteDefaults,...x})).catch(()=>{})},[]);return <section className="page-title"><p className="eyebrow">{c.page_eyebrow}</p><h1>{title}</h1><p>{sub}</p></section>}
-function Footer(){const [c,setC]=useState(siteDefaults); useEffect(()=>{request('/api/site-content').then(x=>setC({...siteDefaults,...x})).catch(()=>{})},[]); return <SectionWithMotionBackground section="footer"><footer><div className="footer-main"><strong>{c.footer_brand}</strong><p>{c.footer_text}</p><Link className="footer-track-link" to="/track">{c.footer_track_label}</Link></div><Link className="footer-admin-link" to="/admin/login" aria-label={c.footer_admin_label}>{c.footer_admin_label}</Link></footer></SectionWithMotionBackground>}
+function Footer(){const [c,setC]=useState(siteDefaults); useEffect(()=>{request('/api/site-content').then(x=>setC({...siteDefaults,...x})).catch(()=>{})},[]); return <SectionWithMotionBackground section="footer"><footer><div className="footer-main"><strong>{c.footer_brand}</strong><p>{c.footer_text}</p></div><Link className="footer-admin-link" to="/admin/login" aria-label={c.footer_admin_label}>{c.footer_admin_label}</Link></footer></SectionWithMotionBackground>}
 
 function AdminLogin(){const nav=useNavigate(); const [email,setEmail]=useState('admin@deadkids.com'),[password,setPassword]=useState('admin123'),[err,setErr]=useState(''); const login=async e=>{e.preventDefault();try{const r=await request('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})});localStorage.setItem('deadkids_token',r.token);nav('/admin')}catch(e){setErr(e.message === 'Failed to fetch' ? 'Backend is not connected. Please run npm run dev and make sure the server says DDKDS CLO API running on http://localhost:5000.' : e.message)}}; return <main className="admin-login-page"><SectionWithMotionBackground section="login"><div className="admin-login-top"><Link to="/" className="btn ghost">← Back to Customer Shop</Link><span>Separate Admin Portal</span></div><form className="form card login" onSubmit={login}><p className="eyebrow">DDKDS ADMIN</p><h1>Admin Login</h1><p className="muted">Manage products, reviews, messages, and website content.</p><input value={email} onChange={e=>setEmail(e.target.value)}/><input type="password" value={password} onChange={e=>setPassword(e.target.value)}/>{err&&<p className="red">{err}</p>}<button className="btn primary">Login</button></form></SectionWithMotionBackground></main>}
 function AdminLayout(){const nav=useNavigate(); useEffect(()=>{if(!localStorage.getItem('deadkids_token')) nav('/admin/login', { replace:true });},[nav]); const logout=()=>{localStorage.removeItem('deadkids_token');nav('/admin/login')}; return <main className="admin"><aside><h2>DDKDS Admin</h2><Link className="admin-store-link" to="/">View Store</Link><NavLink to="/admin" end><LayoutDashboard/> Dashboard</NavLink><NavLink to="/admin/products"><Package/> Products</NavLink><NavLink to="/admin/backgrounds"><Sparkles/> Backgrounds</NavLink><NavLink to="/admin/reviews"><Star/> Reviews</NavLink><NavLink to="/admin/messages"><MessageSquare/> Messages</NavLink><NavLink to="/admin/settings"><Settings/> Settings</NavLink><button onClick={logout}><LogOut/> Logout</button></aside><section className="admin-content"><Routes><Route index element={<AdminDashboard/>}/><Route path="products" element={<AdminProducts/>}/><Route path="backgrounds" element={<BackgroundManager/>}/><Route path="reviews" element={<AdminReviews/>}/><Route path="messages" element={<AdminMessages/>}/><Route path="settings" element={<AdminSettings/>}/></Routes></section></main>}
@@ -475,7 +501,7 @@ function AdminDashboard(){
 
 function AdminHelp({title, children}){return <div className="admin-help"><strong>{title}</strong><p>{children}</p></div>}
 function AdminProducts(){
-  const empty={name:'',category:'T-shirts',description:'',price:0,sizes:['S','M','L'],colors:['Black'],stock:0,images:[],status:'Active',featured:false,best_seller:false,limited_drop:false,new_arrival:false,sort_order:9999};
+  const empty={name:'',category:'T-shirts',description:'',price:0,sizes:['S','M','L'],size_chart:['S','M','L'].map(blankSizeRow),colors:['Black'],stock:0,images:[],status:'Active',featured:false,best_seller:false,limited_drop:false,new_arrival:false,sort_order:9999};
   const [items,setItems]=useState([]),[form,setForm]=useState(empty),[editing,setEditing]=useState(null),[query,setQuery]=useState(''),[category,setCategory]=useState(''),[savingOrder,setSavingOrder]=useState(false);
   const load=()=>request('/api/products?status=all').then(setItems);
   useEffect(load,[]);
@@ -547,7 +573,30 @@ function AdminImageUploader({ label='Upload image', multiple=false, images, onCh
   </div>;
 }
 
-function AdminProductForm({form,setForm,save,editing,reset}){return <form className="form card admin-editor" onSubmit={save}><div className="form-title-row"><div><p className="eyebrow">Product Editor</p><h2>{editing?'Edit Product':'Add New Product'}</h2></div>{editing&&<button type="button" className="btn ghost" onClick={reset}>Cancel Edit</button>}</div><AdminImageUploader label="Upload product pictures" multiple images={form.images || []} onChange={images=>setForm({...form,images})}/><label>Product name shown to customers</label><input required placeholder="Example: DDKDS Redline Tee" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/><div className="form-grid"><div><label>Category</label><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.map(c=><option key={c}>{c}</option>)}</select></div><div><label>Status</label><select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{['Active','Draft','Sold Out','Hidden'].map(x=><option key={x}>{x}</option>)}</select></div></div><div className="form-grid"><div><label>Price</label><input type="number" min="0" placeholder="699" value={form.price} onChange={e=>setForm({...form,price:Number(e.target.value)})}/></div><div><label>Stock</label><input type="number" min="0" placeholder="20" value={form.stock} onChange={e=>setForm({...form,stock:Number(e.target.value)})}/></div></div><label>Available sizes</label><input placeholder="S,M,L,XL" value={(form.sizes||[]).join(',')} onChange={e=>setForm({...form,sizes:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)})}/><label>Available colors</label><input placeholder="Black,Red,White" value={(form.colors||[]).join(',')} onChange={e=>setForm({...form,colors:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)})}/><label>Description</label><textarea placeholder="Describe the product for customers" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/><div className="checks nice-checks"><label><input type="checkbox" checked={!!form.featured} onChange={e=>setForm({...form,featured:e.target.checked})}/> Feature in product sections</label><label><input type="checkbox" checked={!!form.best_seller} onChange={e=>setForm({...form,best_seller:e.target.checked})}/> Best Seller badge</label><label><input type="checkbox" checked={!!form.limited_drop} onChange={e=>setForm({...form,limited_drop:e.target.checked})}/> Limited Drop badge</label><label><input type="checkbox" checked={!!form.new_arrival} onChange={e=>setForm({...form,new_arrival:e.target.checked})}/> New Arrival</label></div><button className="btn primary"><Plus/> {editing?'Update Product':'Add Product'}</button></form>}
+function AdminSizeChartEditor({ form, setForm }) {
+  const rows = Array.isArray(form.size_chart) && form.size_chart.length ? form.size_chart : (form.sizes || ['S','M','L']).map(blankSizeRow);
+  const updateRow = (index, key, value) => {
+    const next = rows.map((row, i) => i === index ? { ...row, [key]: value } : row);
+    setForm({ ...form, size_chart: next, sizes: next.map(row => row.size).filter(Boolean) });
+  };
+  const addRow = () => setForm({ ...form, size_chart: [...rows, blankSizeRow('') ] });
+  const removeRow = index => {
+    const next = rows.filter((_, i) => i !== index);
+    setForm({ ...form, size_chart: next, sizes: next.map(row => row.size).filter(Boolean) });
+  };
+  return <div className="admin-size-template">
+    <div className="form-title-row"><div><label>Item sizing template</label><p className="muted">Fill only numbers or short notes. Customers see this after opening the item.</p></div><button type="button" className="btn ghost" onClick={addRow}>Add Size</button></div>
+    <div className="admin-size-grid">{rows.map((row,index)=><div className="admin-size-row" key={index}>
+      <input placeholder="Size" value={row.size || ''} onChange={e=>updateRow(index,'size',e.target.value)}/>
+      <input placeholder="Chest, ex: 22 in" value={row.chest || ''} onChange={e=>updateRow(index,'chest',e.target.value)}/>
+      <input placeholder="Length, ex: 29 in" value={row.length || ''} onChange={e=>updateRow(index,'length',e.target.value)}/>
+      <input placeholder="Best fit" value={row.fit || ''} onChange={e=>updateRow(index,'fit',e.target.value)}/>
+      <button type="button" className="icon-btn" onClick={()=>removeRow(index)}><X size={16}/></button>
+    </div>)}</div>
+  </div>;
+}
+
+function AdminProductForm({form,setForm,save,editing,reset}){return <form className="form card admin-editor" onSubmit={save}><div className="form-title-row"><div><p className="eyebrow">Product Editor</p><h2>{editing?'Edit Product':'Add New Product'}</h2></div>{editing&&<button type="button" className="btn ghost" onClick={reset}>Cancel Edit</button>}</div><AdminImageUploader label="Upload product pictures" multiple images={form.images || []} onChange={images=>setForm({...form,images})}/><label>Product name shown to customers</label><input required placeholder="Example: DDKDS Redline Tee" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/><div className="form-grid"><div><label>Category</label><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.map(c=><option key={c}>{c}</option>)}</select></div><div><label>Status</label><select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{['Active','Draft','Sold Out','Hidden'].map(x=><option key={x}>{x}</option>)}</select></div></div><div className="form-grid"><div><label>Price</label><input type="number" min="0" placeholder="699" value={form.price} onChange={e=>setForm({...form,price:Number(e.target.value)})}/></div><div><label>Stock</label><input type="number" min="0" placeholder="20" value={form.stock} onChange={e=>setForm({...form,stock:Number(e.target.value)})}/></div></div><AdminSizeChartEditor form={form} setForm={setForm}/><label>Available colors</label><input placeholder="Black,Red,White" value={(form.colors||[]).join(',')} onChange={e=>setForm({...form,colors:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)})}/><label>Description</label><textarea placeholder="Describe the product for customers" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/><div className="checks nice-checks"><label><input type="checkbox" checked={!!form.featured} onChange={e=>setForm({...form,featured:e.target.checked})}/> Feature in product sections</label><label><input type="checkbox" checked={!!form.best_seller} onChange={e=>setForm({...form,best_seller:e.target.checked})}/> Best Seller badge</label><label><input type="checkbox" checked={!!form.limited_drop} onChange={e=>setForm({...form,limited_drop:e.target.checked})}/> Limited Drop badge</label><label><input type="checkbox" checked={!!form.new_arrival} onChange={e=>setForm({...form,new_arrival:e.target.checked})}/> New Arrival</label></div><button className="btn primary"><Plus/> {editing?'Update Product':'Add Product'}</button></form>}
 function AdminProductTable({rows,onEdit,onDelete,onReorder}){
   const [dragId,setDragId]=useState(null);
   const move=(index,dir)=>{

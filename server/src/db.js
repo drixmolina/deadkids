@@ -147,7 +147,12 @@ export function initDb() {
 
   data.site_content = { ...emptyData().site_content, ...(data.site_content || {}) };
   data.background_settings = { ...emptyData().background_settings, ...(data.background_settings || {}), sections: { ...emptyData().background_settings.sections, ...(data.background_settings?.sections || {}) } };
-  data.products = (data.products || []).map((product, index) => ({ ...product, sort_order: product.sort_order ?? index + 1, images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []) }));
+  data.products = (data.products || []).map((product, index) => ({
+    ...product,
+    sort_order: product.sort_order ?? index + 1,
+    images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []),
+    size_chart: Array.isArray(product.size_chart) ? product.size_chart : []
+  }));
   if (!data.products.length) seedProducts();
   saveDb();
 }
