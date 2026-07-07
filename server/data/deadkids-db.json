@@ -7,6 +7,7 @@
       "created_at": "2026-07-01T18:56:35.093Z"
     }
   ],
+  "customers": [],
   "products": [
     {
       "id": 2,
@@ -34,7 +35,8 @@
       "status": "Active",
       "sort_order": 2,
       "created_at": "2026-07-01T18:56:35.096Z",
-      "updated_at": "2026-07-01T18:56:35.096Z"
+      "updated_at": "2026-07-01T18:56:35.096Z",
+      "size_chart": []
     },
     {
       "id": 3,
@@ -62,7 +64,8 @@
       "status": "Active",
       "sort_order": 3,
       "created_at": "2026-07-01T18:56:35.096Z",
-      "updated_at": "2026-07-01T18:56:35.096Z"
+      "updated_at": "2026-07-01T18:56:35.096Z",
+      "size_chart": []
     },
     {
       "id": 4,
@@ -90,7 +93,8 @@
       "status": "Active",
       "sort_order": 4,
       "created_at": "2026-07-01T18:56:35.096Z",
-      "updated_at": "2026-07-01T18:56:35.096Z"
+      "updated_at": "2026-07-01T18:56:35.096Z",
+      "size_chart": []
     },
     {
       "id": 5,
@@ -116,7 +120,8 @@
       "status": "Active",
       "sort_order": 5,
       "created_at": "2026-07-01T18:56:35.096Z",
-      "updated_at": "2026-07-01T18:56:35.096Z"
+      "updated_at": "2026-07-01T18:56:35.096Z",
+      "size_chart": []
     },
     {
       "id": 6,
@@ -142,7 +147,8 @@
       "status": "Active",
       "sort_order": 6,
       "created_at": "2026-07-01T18:56:35.096Z",
-      "updated_at": "2026-07-01T18:56:35.096Z"
+      "updated_at": "2026-07-01T18:56:35.096Z",
+      "size_chart": []
     },
     {
       "id": 7,
@@ -170,7 +176,8 @@
       "status": "Active",
       "sort_order": 7,
       "created_at": "2026-07-01T18:56:35.096Z",
-      "updated_at": "2026-07-01T18:56:35.096Z"
+      "updated_at": "2026-07-01T18:56:35.096Z",
+      "size_chart": []
     },
     {
       "id": 8,
@@ -198,7 +205,8 @@
       "status": "Active",
       "sort_order": 8,
       "created_at": "2026-07-01T18:56:35.096Z",
-      "updated_at": "2026-07-01T18:56:35.096Z"
+      "updated_at": "2026-07-01T18:56:35.096Z",
+      "size_chart": []
     },
     {
       "id": 9,
@@ -223,7 +231,8 @@
       "limited_drop": 0,
       "new_arrival": 0,
       "created_at": "2026-07-02T19:14:43.325Z",
-      "updated_at": "2026-07-02T19:14:43.325Z"
+      "updated_at": "2026-07-02T19:14:43.325Z",
+      "size_chart": []
     }
   ],
   "upcoming_products": [

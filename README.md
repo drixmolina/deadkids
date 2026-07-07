@@ -159,3 +159,31 @@ This version includes a friendlier admin side:
 - Upcoming drop add/edit with teaser image and release date.
 - POS/order management for status and tracking number.
 - Website Content Settings so the admin can edit homepage text, About page, Contact page, footer, checkout/POS payment methods, checkout notes, and hidden music settings without coding.
+
+## Customer Google Login Setup
+
+Customer login is separate from the admin login. Admin still uses `admin@deadkids.com` / `admin123`.
+
+1. Create a Google OAuth Client in Google Cloud Console.
+2. Add Authorized JavaScript origin: `http://localhost:5173`
+3. Add Authorized Redirect URI: `http://localhost:5000/api/auth/google/callback`
+4. Copy `server/.env.example` to `server/.env`.
+5. Fill these values in `server/.env`:
+
+```txt
+GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
+CLIENT_URL=http://localhost:5173
+JWT_SECRET=change_this_super_secret_key
+```
+
+6. Run:
+
+```bash
+npm install
+npm run install:all
+npm run dev
+```
+
+Customer Google login starts at `http://localhost:5000/api/auth/google` and redirects back to `http://localhost:5173/auth/success?token=...`.

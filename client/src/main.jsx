@@ -51,9 +51,15 @@ function CustomerProvider({ children }) {
     localStorage.setItem('deadkids_customer', JSON.stringify(payload.customer));
     setCustomer(payload.customer);
   };
+  const loadProfile = async () => {
+    const res = await customerRequest('/api/auth/me');
+    localStorage.setItem('deadkids_customer', JSON.stringify(res.customer));
+    setCustomer(res.customer);
+    return res.customer;
+  };
   const register = async form => saveSession(await customerRequest('/api/customer/register', { method: 'POST', body: JSON.stringify(form) }));
   const login = async form => saveSession(await customerRequest('/api/customer/login', { method: 'POST', body: JSON.stringify(form) }));
-  const googleLogin = async credential => saveSession(await customerRequest('/api/customer/google', { method: 'POST', body: JSON.stringify({ credential }) }));
+  const googleLogin = () => { window.location.href = `${API}/api/auth/google`; };
   const logout = () => {
     localStorage.removeItem('deadkids_customer_token');
     localStorage.removeItem('deadkids_customer');
@@ -61,12 +67,9 @@ function CustomerProvider({ children }) {
   };
   useEffect(() => {
     if (!localStorage.getItem('deadkids_customer_token')) return;
-    customerRequest('/api/customer/me').then(res => {
-      localStorage.setItem('deadkids_customer', JSON.stringify(res.customer));
-      setCustomer(res.customer);
-    }).catch(logout);
+    loadProfile().catch(logout);
   }, []);
-  return <CustomerContext.Provider value={{ customer, signedIn, register, login, googleLogin, logout }}>{children}</CustomerContext.Provider>;
+  return <CustomerContext.Provider value={{ customer, signedIn, register, login, googleLogin, loadProfile, logout }}>{children}</CustomerContext.Provider>;
 }
 function CartProvider({ children }) {
   const [items, setItems] = useState(() => {
@@ -269,6 +272,7 @@ function AppShell({ light, setLight }) {
       <Route path="/cart" element={<Cart/>}/>
       <Route path="/checkout" element={<Checkout/>}/>
       <Route path="/account" element={<Account/>}/>
+      <Route path="/auth/success" element={<AuthSuccess/>}/>
       <Route path="/receipt" element={<ReceiptPage/>}/>
       <Route path="/track" element={<Track/>}/>
       <Route path="/size-guide" element={<SizeGuide/>}/>
@@ -503,31 +507,8 @@ function ReviewsPage(){
   return <main className="reviews-page"><PageTitle title="Reviews" sub="Minimal feedback from DDKDS customers." />{err&&<p className="form-message error-message">{err}</p>}<CustomerReviewForm onSubmitted={review=>setPendingReviews(prev=>[review,...prev])}/><CustomerReviewsSection reviews={reviews} pendingReviews={pendingReviews}/></main>;
 }
 
-function GoogleSignInButton({ onSuccess, onError }) {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-  const buttonId = 'google-signin-button';
-  useEffect(() => {
-    if (!clientId) return;
-    const render = () => {
-      if (!window.google?.accounts?.id) return;
-      window.google.accounts.id.initialize({ client_id: clientId, callback: response => onSuccess(response.credential) });
-      const el = document.getElementById(buttonId);
-      if (el) {
-        el.innerHTML = '';
-        window.google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: 320, text: 'continue_with' });
-      }
-    };
-    if (window.google?.accounts?.id) { render(); return; }
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = render;
-    script.onerror = () => onError('Google sign-in could not load.');
-    document.head.appendChild(script);
-  }, [clientId, onSuccess, onError]);
-  if (!clientId) return <p className="muted google-note">Google sign-in is ready in the code. Add your Google Client ID to turn this button on.</p>;
-  return <div id={buttonId} className="google-signin-slot" />;
+function GoogleSignInButton({ onClick }) {
+  return <button type="button" className="btn google-btn" onClick={onClick}>Continue with Google</button>;
 }
 
 function Account() {
@@ -545,13 +526,21 @@ function Account() {
       setMsg('Signed in. You can now checkout.');
     }catch(error){setErr(error.message || 'Could not sign in');}
   };
-  const google = async credential => {
-    setErr(''); setMsg('');
-    try{ await googleLogin(credential); setMsg('Signed in with Google.'); }
-    catch(error){ setErr(error.message || 'Google sign-in failed'); }
-  };
-  if (signedIn) return <main className="account-page"><SectionWithMotionBackground section="login"><PageTitle title="My Account" sub="Your DDKDS checkout profile."/><div className="account-card card"><div className="account-avatar">{customer.picture ? <img src={customer.picture} alt={customer.name}/> : <User/>}</div><h2>{customer.name}</h2><p className="muted">{customer.email}</p><div className="row-actions"><Link className="btn primary" to="/checkout">Continue Checkout</Link><button className="btn ghost" onClick={()=>{logout();nav('/')}}>Sign Out</button></div></div></SectionWithMotionBackground></main>;
-  return <main className="account-page"><SectionWithMotionBackground section="login"><PageTitle title="Customer Account" sub="Create an account or sign in before placing an order."/><form className="form card account-form" onSubmit={submit}><div className="account-tabs"><button type="button" className={mode==='login'?'active':''} onClick={()=>setMode('login')}>Sign in</button><button type="button" className={mode==='register'?'active':''} onClick={()=>setMode('register')}>Create account</button></div>{mode==='register'&&<input required placeholder="Full name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>}<input required type="email" placeholder="Email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/><input required type="password" minLength="6" placeholder="Password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/><button className="btn primary">{mode==='register'?'Create Account':'Sign In'}</button><div className="account-divider"><span>or</span></div><GoogleSignInButton onSuccess={google} onError={setErr}/>{err&&<p className="form-message error-message">{err}</p>}{msg&&<p className="form-message">{msg}</p>}<p className="muted small-text">Your account is for checkout only. Admin stays separate.</p></form></SectionWithMotionBackground></main>;
+  if (signedIn) return <main className="account-page"><SectionWithMotionBackground section="login"><PageTitle title="My Account" sub="Your DDKDS checkout profile."/><div className="account-card card"><div className="account-avatar">{customer.avatar ? <img src={customer.avatar} alt={customer.name}/> : <User/>}</div><h2>{customer.name}</h2><p className="muted">{customer.email}</p><div className="row-actions"><Link className="btn primary" to="/checkout">Continue Checkout</Link><button className="btn ghost" onClick={()=>{logout();nav('/')}}>Sign Out</button></div></div></SectionWithMotionBackground></main>;
+  return <main className="account-page"><SectionWithMotionBackground section="login"><PageTitle title="Customer Account" sub="Create an account or sign in before placing an order."/><form className="form card account-form" onSubmit={submit}><div className="account-tabs"><button type="button" className={mode==='login'?'active':''} onClick={()=>setMode('login')}>Sign in</button><button type="button" className={mode==='register'?'active':''} onClick={()=>setMode('register')}>Create account</button></div>{mode==='register'&&<input required placeholder="Full name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>}<input required type="email" placeholder="Email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/><input required type="password" minLength="6" placeholder="Password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/><button className="btn primary">{mode==='register'?'Create Account':'Sign In'}</button><div className="account-divider"><span>or</span></div><GoogleSignInButton onClick={googleLogin}/>{err&&<p className="form-message error-message">{err}</p>}{msg&&<p className="form-message">{msg}</p>}<p className="muted small-text">Your account is for checkout only. Admin stays separate.</p></form></SectionWithMotionBackground></main>;
+}
+
+function AuthSuccess() {
+  const nav = useNavigate();
+  const { loadProfile } = useCustomer();
+  const [message,setMessage]=useState('Finishing Google sign in...');
+  useEffect(()=>{
+    const token = new URLSearchParams(window.location.search).get('token');
+    if(!token){ setMessage('Missing login token. Please try signing in again.'); return; }
+    localStorage.setItem('deadkids_customer_token', token);
+    loadProfile().then(()=>nav('/account', { replace:true })).catch(()=>setMessage('Could not finish Google sign in. Please try again.'));
+  },[loadProfile,nav]);
+  return <main className="account-page"><SectionWithMotionBackground section="login"><div className="card account-card"><User/><h2>{message}</h2></div></SectionWithMotionBackground></main>;
 }
 
 function Cart() { const {items,remove,update,total}=useCart(); return <main><SectionWithMotionBackground section="checkout"><PageTitle title="Cart" sub="Review your selected DDKDS items."/>{items.map(i=><div className="cart-row card" key={i.key}><img src={API+(i.image||'/placeholder/product-1.svg')} alt={i.name} loading="lazy" decoding="async"/><div><h3>{i.name}</h3><p>{i.size} / {i.color}</p></div><strong>{pesos(i.price)}</strong><input type="number" value={i.qty} onChange={e=>update(i.key,Number(e.target.value))}/><button className="icon-btn" onClick={()=>remove(i.key)}><Trash2/></button></div>)}<div className="checkout-box"><h2>Total: {pesos(total)}</h2><Link className="btn primary" to="/checkout">Checkout</Link></div></SectionWithMotionBackground></main>; }

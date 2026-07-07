@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -7,11 +7,14 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { data, initDb, insert, update, remove, makeOrderNumber, timestamp, saveDb } from './db.js';
 import { requireAdmin } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const app = express();
 const PORT = process.env.PORT || 5000;
 const uploadsDir = path.join(__dirname, '..', 'uploads');
@@ -21,6 +24,7 @@ initDb();
 
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 app.use(express.json({ limit: '10mb' }));
+app.use(passport.initialize());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 app.use('/placeholder', express.static(path.join(__dirname, '..', 'placeholder')));
 
@@ -60,6 +64,31 @@ function customerToken(customer) {
   return jwt.sign({ id: customer.id, email: customer.email, role: 'customer' }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '30d' });
 }
 
+function findOrCreateGoogleCustomer(profile) {
+  const email = safeString(profile.emails?.[0]?.value).toLowerCase();
+  if (!email) throw new Error('Google account has no email');
+  let customer = data.customers.find(item => item.email === email);
+  const avatar = safeString(profile.photos?.[0]?.value);
+  if (customer) {
+    customer.name = customer.name || safeString(profile.displayName, email);
+    customer.avatar = customer.avatar || avatar;
+    customer.provider = customer.provider || 'google';
+    customer.googleId = customer.googleId || safeString(profile.id);
+    customer.updatedAt = timestamp();
+    saveDb();
+    return customer;
+  }
+  return insert('customers', {
+    name: safeString(profile.displayName, email),
+    email,
+    avatar,
+    provider: 'google',
+    googleId: safeString(profile.id),
+    createdAt: timestamp(),
+    updatedAt: timestamp()
+  });
+}
+
 function requireCustomer(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : '';
@@ -78,6 +107,20 @@ function requireCustomer(req, res, next) {
 function safeStringArray(value) {
   if (!Array.isArray(value)) return [];
   return value.map(item => safeString(item)).filter(Boolean);
+}
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || `http://localhost:${PORT}/api/auth/google/callback`
+  }, (accessToken, refreshToken, profile, done) => {
+    try {
+      done(null, findOrCreateGoogleCustomer(profile));
+    } catch (err) {
+      done(err);
+    }
+  }));
 }
 
 function safeSizeChart(value) {
@@ -159,6 +202,21 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ token, admin: { id: admin.id, email: admin.email } });
 });
 
+app.get('/api/auth/google', (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) return res.status(500).json({ message: 'Google login is not configured' });
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })(req, res, next);
+});
+
+app.get('/api/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/account?login=google_failed`, session: false }),
+  (req, res) => {
+    const token = customerToken(req.user);
+    const url = new URL('/auth/success', process.env.CLIENT_URL || 'http://localhost:5173');
+    url.searchParams.set('token', token);
+    res.redirect(url.toString());
+  }
+);
+
 app.post('/api/customer/register', (req, res) => {
   const name = safeString(req.body.name);
   const email = safeString(req.body.email).toLowerCase();
@@ -170,8 +228,8 @@ app.post('/api/customer/register', (req, res) => {
     email,
     password: bcrypt.hashSync(password, 10),
     provider: 'email',
-    created_at: timestamp(),
-    updated_at: timestamp()
+    createdAt: timestamp(),
+    updatedAt: timestamp()
   });
   res.status(201).json({ token: customerToken(customer), customer: cleanCustomer(customer) });
 });
@@ -188,39 +246,8 @@ app.get('/api/customer/me', requireCustomer, (req, res) => {
   res.json({ customer: cleanCustomer(req.customer) });
 });
 
-app.post('/api/customer/google', async (req, res) => {
-  const idToken = safeString(req.body.credential || req.body.id_token);
-  const clientId = process.env.GOOGLE_CLIENT_ID || '';
-  if (!clientId) return res.status(400).json({ message: 'Google sign-in is not configured yet' });
-  if (!idToken) return res.status(400).json({ message: 'Missing Google sign-in token' });
-  try {
-    const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
-    const profile = await verifyRes.json();
-    if (!verifyRes.ok || profile.aud !== clientId || profile.email_verified !== 'true') return res.status(401).json({ message: 'Google sign-in could not be verified' });
-    const email = safeString(profile.email).toLowerCase();
-    let customer = data.customers.find(item => item.email === email);
-    if (customer) {
-      customer.name = customer.name || safeString(profile.name, email);
-      customer.provider = customer.provider || 'google';
-      customer.google_sub = customer.google_sub || safeString(profile.sub);
-      customer.picture = customer.picture || safeString(profile.picture);
-      customer.updated_at = timestamp();
-      saveDb();
-    } else {
-      customer = insert('customers', {
-        name: safeString(profile.name, email),
-        email,
-        provider: 'google',
-        google_sub: safeString(profile.sub),
-        picture: safeString(profile.picture),
-        created_at: timestamp(),
-        updated_at: timestamp()
-      });
-    }
-    res.json({ token: customerToken(customer), customer: cleanCustomer(customer) });
-  } catch {
-    res.status(502).json({ message: 'Google sign-in is unavailable right now' });
-  }
+app.get('/api/auth/me', requireCustomer, (req, res) => {
+  res.json({ customer: cleanCustomer(req.customer) });
 });
 
 app.post('/api/upload', requireAdmin, (req, res) => {
