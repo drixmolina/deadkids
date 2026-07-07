@@ -50,6 +50,31 @@ function safeString(value, fallback = '') {
   return typeof value === 'string' ? value.trim() : fallback;
 }
 
+function cleanCustomer(row) {
+  if (!row) return null;
+  const { password, ...safe } = row;
+  return safe;
+}
+
+function customerToken(customer) {
+  return jwt.sign({ id: customer.id, email: customer.email, role: 'customer' }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '30d' });
+}
+
+function requireCustomer(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!token) return res.status(401).json({ message: 'Please sign in to place an order' });
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev_secret');
+    const customer = data.customers.find(item => Number(item.id) === Number(payload.id));
+    if (!customer) return res.status(401).json({ message: 'Customer account not found' });
+    req.customer = customer;
+    next();
+  } catch {
+    res.status(401).json({ message: 'Please sign in again' });
+  }
+}
+
 function safeStringArray(value) {
   if (!Array.isArray(value)) return [];
   return value.map(item => safeString(item)).filter(Boolean);
@@ -132,6 +157,70 @@ app.post('/api/auth/login', (req, res) => {
   if (!admin || !bcrypt.compareSync(password, admin.password)) return res.status(401).json({ message: 'Invalid email or password' });
   const token = jwt.sign({ id: admin.id, email: admin.email }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
   res.json({ token, admin: { id: admin.id, email: admin.email } });
+});
+
+app.post('/api/customer/register', (req, res) => {
+  const name = safeString(req.body.name);
+  const email = safeString(req.body.email).toLowerCase();
+  const password = String(req.body.password || '');
+  if (!name || !email || password.length < 6) return res.status(400).json({ message: 'Name, email, and 6+ character password are required' });
+  if (data.customers.some(item => item.email === email)) return res.status(409).json({ message: 'Email already has an account' });
+  const customer = insert('customers', {
+    name,
+    email,
+    password: bcrypt.hashSync(password, 10),
+    provider: 'email',
+    created_at: timestamp(),
+    updated_at: timestamp()
+  });
+  res.status(201).json({ token: customerToken(customer), customer: cleanCustomer(customer) });
+});
+
+app.post('/api/customer/login', (req, res) => {
+  const email = safeString(req.body.email).toLowerCase();
+  const password = String(req.body.password || '');
+  const customer = data.customers.find(item => item.email === email && item.password);
+  if (!customer || !bcrypt.compareSync(password, customer.password)) return res.status(401).json({ message: 'Invalid email or password' });
+  res.json({ token: customerToken(customer), customer: cleanCustomer(customer) });
+});
+
+app.get('/api/customer/me', requireCustomer, (req, res) => {
+  res.json({ customer: cleanCustomer(req.customer) });
+});
+
+app.post('/api/customer/google', async (req, res) => {
+  const idToken = safeString(req.body.credential || req.body.id_token);
+  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  if (!clientId) return res.status(400).json({ message: 'Google sign-in is not configured yet' });
+  if (!idToken) return res.status(400).json({ message: 'Missing Google sign-in token' });
+  try {
+    const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    const profile = await verifyRes.json();
+    if (!verifyRes.ok || profile.aud !== clientId || profile.email_verified !== 'true') return res.status(401).json({ message: 'Google sign-in could not be verified' });
+    const email = safeString(profile.email).toLowerCase();
+    let customer = data.customers.find(item => item.email === email);
+    if (customer) {
+      customer.name = customer.name || safeString(profile.name, email);
+      customer.provider = customer.provider || 'google';
+      customer.google_sub = customer.google_sub || safeString(profile.sub);
+      customer.picture = customer.picture || safeString(profile.picture);
+      customer.updated_at = timestamp();
+      saveDb();
+    } else {
+      customer = insert('customers', {
+        name: safeString(profile.name, email),
+        email,
+        provider: 'google',
+        google_sub: safeString(profile.sub),
+        picture: safeString(profile.picture),
+        created_at: timestamp(),
+        updated_at: timestamp()
+      });
+    }
+    res.json({ token: customerToken(customer), customer: cleanCustomer(customer) });
+  } catch {
+    res.status(502).json({ message: 'Google sign-in is unavailable right now' });
+  }
 });
 
 app.post('/api/upload', requireAdmin, (req, res) => {
@@ -248,16 +337,16 @@ app.get('/api/notify', requireAdmin, (req, res) => {
   res.json(rows);
 });
 
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', requireCustomer, (req, res) => {
   const { customer_name, email, phone, address, items, total, payment_method } = req.body;
   const safeItems = safeOrderItems(items);
-  if (!safeString(customer_name)) return res.status(400).json({ message: 'Customer name is required' });
   if (!safeItems.length) return res.status(400).json({ message: 'Cart is empty' });
   const order_number = makeOrderNumber();
   insert('orders', {
     order_number,
-    customer_name: safeString(customer_name),
-    email: safeString(email),
+    customer_id: req.customer.id,
+    customer_name: safeString(customer_name, req.customer.name),
+    email: safeString(email, req.customer.email),
     phone: safeString(phone),
     address: safeString(address),
     items: safeItems,

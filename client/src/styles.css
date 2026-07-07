@@ -3968,3 +3968,135 @@ body{
     padding:14px !important;
   }
 }
+
+/* Customer accounts */
+.account-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:38px;
+  padding:8px 12px;
+  border-radius:8px;
+  color:var(--text);
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.account-pill:hover,
+.account-pill.active{
+  background:rgba(217,4,41,.14);
+  border-color:rgba(217,4,41,.34);
+}
+.account-page .page-title{
+  margin-bottom:18px !important;
+}
+.account-form,
+.account-card,
+.checkout-login-card{
+  width:min(100%,520px);
+  margin-inline:auto;
+  border-radius:8px !important;
+}
+.account-form{
+  display:grid;
+  gap:12px;
+  padding:18px !important;
+}
+.account-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:4px;
+}
+.account-tabs button{
+  border:1px solid var(--line);
+  background:var(--surface2);
+  color:var(--muted);
+  border-radius:8px;
+  padding:10px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  cursor:pointer;
+}
+.account-tabs button.active{
+  background:var(--red);
+  color:#fff;
+  border-color:var(--red);
+}
+.account-divider{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:10px;
+  color:var(--muted);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+}
+.account-divider:before,
+.account-divider:after{
+  content:"";
+  height:1px;
+  background:var(--line);
+}
+.google-signin-slot{
+  min-height:42px;
+  display:grid;
+  place-items:center;
+}
+.google-note{
+  border:1px dashed var(--line);
+  border-radius:8px;
+  padding:11px 12px;
+  font-size:12px !important;
+}
+.account-card,
+.checkout-login-card{
+  display:grid;
+  justify-items:center;
+  text-align:center;
+  gap:12px;
+  padding:24px !important;
+}
+.account-avatar{
+  width:74px;
+  height:74px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  overflow:hidden;
+  background:linear-gradient(135deg,var(--red),#111);
+  color:#fff;
+}
+.account-avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.checkout-login-card > svg{
+  color:var(--red);
+  width:34px;
+  height:34px;
+}
+.app.light.customer-app .account-pill{
+  background:#fffdfa;
+  color:#14110f;
+  border-color:#e7ded4;
+}
+@media(max-width:620px){
+  .account-pill span{
+    display:none;
+  }
+  .account-pill{
+    width:38px;
+    justify-content:center;
+    padding:8px;
+  }
+  .account-tabs{
+    grid-template-columns:1fr;
+  }
+}

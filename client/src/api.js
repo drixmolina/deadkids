@@ -18,6 +18,22 @@ export async function request(path, options = {}) {
   return data;
 }
 
+export async function customerRequest(path, options = {}) {
+  const token = localStorage.getItem('deadkids_customer_token');
+  const isFormData = options.body instanceof FormData;
+  const headers = { ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API}${path}`, { ...options, headers });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    localStorage.removeItem('deadkids_customer_token');
+    localStorage.removeItem('deadkids_customer');
+    throw new Error('Please sign in to continue.');
+  }
+  if (!res.ok) throw new Error(data.message || 'Request failed');
+  return data;
+}
+
 export async function uploadImage(file) {
   const formData = new FormData();
   formData.append('image', file);

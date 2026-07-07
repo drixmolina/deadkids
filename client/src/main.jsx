@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Heart, Search, ShoppingBag, Moon, Sun, Trash2, LogOut, Package, LayoutDashboard, MessageSquare, Star, Plus, UploadCloud, X, SlidersHorizontal, Ruler, ReceiptText, Settings, Sparkles } from 'lucide-react';
-import { API, request, uploadImage } from './api.js';
+import { Heart, Search, ShoppingBag, Moon, Sun, Trash2, LogOut, Package, LayoutDashboard, MessageSquare, Star, Plus, UploadCloud, X, SlidersHorizontal, Ruler, ReceiptText, Settings, Sparkles, User } from 'lucide-react';
+import { API, request, customerRequest, uploadImage } from './api.js';
 import BackgroundManager from './BackgroundManager.jsx';
 import SectionWithMotionBackground from './SectionWithMotionBackground.jsx';
 import { useBackgroundSettings } from './useBackgroundSettings.js';
 import './styles.css';
 
 const CartContext = createContext();
+const CustomerContext = createContext();
 const categories = ['T-shirts','Hoodies','Pants','Polo shirts','Bags','Caps','Bonnets','Crop tops','Shorts'];
 const toNumber = (value, fallback = 0) => {
   const number = Number(value);
@@ -41,6 +42,32 @@ const siteDefaults = {
 };
 
 function useCart() { return useContext(CartContext); }
+function useCustomer() { return useContext(CustomerContext); }
+function CustomerProvider({ children }) {
+  const [customer, setCustomer] = useState(() => safeJson('deadkids_customer', null));
+  const signedIn = !!customer;
+  const saveSession = payload => {
+    localStorage.setItem('deadkids_customer_token', payload.token);
+    localStorage.setItem('deadkids_customer', JSON.stringify(payload.customer));
+    setCustomer(payload.customer);
+  };
+  const register = async form => saveSession(await customerRequest('/api/customer/register', { method: 'POST', body: JSON.stringify(form) }));
+  const login = async form => saveSession(await customerRequest('/api/customer/login', { method: 'POST', body: JSON.stringify(form) }));
+  const googleLogin = async credential => saveSession(await customerRequest('/api/customer/google', { method: 'POST', body: JSON.stringify({ credential }) }));
+  const logout = () => {
+    localStorage.removeItem('deadkids_customer_token');
+    localStorage.removeItem('deadkids_customer');
+    setCustomer(null);
+  };
+  useEffect(() => {
+    if (!localStorage.getItem('deadkids_customer_token')) return;
+    customerRequest('/api/customer/me').then(res => {
+      localStorage.setItem('deadkids_customer', JSON.stringify(res.customer));
+      setCustomer(res.customer);
+    }).catch(logout);
+  }, []);
+  return <CustomerContext.Provider value={{ customer, signedIn, register, login, googleLogin, logout }}>{children}</CustomerContext.Provider>;
+}
 function CartProvider({ children }) {
   const [items, setItems] = useState(() => {
     const stored = safeJson('deadkids_cart', []);
@@ -160,7 +187,7 @@ function App() {
     document.body.classList.toggle('light-mode', light);
     return () => document.body.classList.remove('light-mode');
   }, [light]);
-  return <CartProvider><BrowserRouter><ThemeController light={light}/><AppShell light={light} setLight={setLight}/></BrowserRouter></CartProvider>;
+  return <CustomerProvider><CartProvider><BrowserRouter><ThemeController light={light}/><AppShell light={light} setLight={setLight}/></BrowserRouter></CartProvider></CustomerProvider>;
 }
 
 function AppShell({ light, setLight }) {
@@ -241,6 +268,7 @@ function AppShell({ light, setLight }) {
       <Route path="/product/:id" element={<ProductDetails/>}/>
       <Route path="/cart" element={<Cart/>}/>
       <Route path="/checkout" element={<Checkout/>}/>
+      <Route path="/account" element={<Account/>}/>
       <Route path="/receipt" element={<ReceiptPage/>}/>
       <Route path="/track" element={<Track/>}/>
       <Route path="/size-guide" element={<SizeGuide/>}/>
@@ -258,9 +286,10 @@ function AppShell({ light, setLight }) {
 
 function Navbar({ light, setLight }) {
   const { items } = useCart();
+  const { customer } = useCustomer();
   const [content,setContent]=useState(siteDefaults);
   useEffect(()=>{request('/api/site-content').then(x=>setContent({...siteDefaults,...x})).catch(()=>{})},[]);
-  return <header className="nav customer-nav luxury-nav"><div className="nav-brand-wrap"><Link to="/" className="logo">{content.nav_brand} <span>{content.nav_brand_accent}</span></Link><small>{content.nav_tagline}</small></div><nav><NavLink to="/shop">{content.nav_shop_label}</NavLink><NavLink to="/reviews">{content.nav_reviews_label}</NavLink><NavLink to="/contact">{content.nav_contact_label}</NavLink></nav><div className="nav-actions"><button className="icon-btn" aria-label="Toggle theme" onClick={() => setLight(!light)}>{light ? <Moon/> : <Sun/>}</button><Link className="cart-pill" to="/cart"><ShoppingBag size={18}/><span>{items.length}</span></Link></div></header>;
+  return <header className="nav customer-nav luxury-nav"><div className="nav-brand-wrap"><Link to="/" className="logo">{content.nav_brand} <span>{content.nav_brand_accent}</span></Link><small>{content.nav_tagline}</small></div><nav><NavLink to="/shop">{content.nav_shop_label}</NavLink><NavLink to="/reviews">{content.nav_reviews_label}</NavLink><NavLink to="/contact">{content.nav_contact_label}</NavLink></nav><div className="nav-actions"><button className="icon-btn" aria-label="Toggle theme" onClick={() => setLight(!light)}>{light ? <Moon/> : <Sun/>}</button><Link className="account-pill" to="/account"><User size={16}/><span>{customer ? 'Account' : 'Sign in'}</span></Link><Link className="cart-pill" to="/cart"><ShoppingBag size={18}/><span>{items.length}</span></Link></div></header>;
 }
 
 function Home() {
@@ -474,9 +503,60 @@ function ReviewsPage(){
   return <main className="reviews-page"><PageTitle title="Reviews" sub="Minimal feedback from DDKDS customers." />{err&&<p className="form-message error-message">{err}</p>}<CustomerReviewForm onSubmitted={review=>setPendingReviews(prev=>[review,...prev])}/><CustomerReviewsSection reviews={reviews} pendingReviews={pendingReviews}/></main>;
 }
 
+function GoogleSignInButton({ onSuccess, onError }) {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const buttonId = 'google-signin-button';
+  useEffect(() => {
+    if (!clientId) return;
+    const render = () => {
+      if (!window.google?.accounts?.id) return;
+      window.google.accounts.id.initialize({ client_id: clientId, callback: response => onSuccess(response.credential) });
+      const el = document.getElementById(buttonId);
+      if (el) {
+        el.innerHTML = '';
+        window.google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: 320, text: 'continue_with' });
+      }
+    };
+    if (window.google?.accounts?.id) { render(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = render;
+    script.onerror = () => onError('Google sign-in could not load.');
+    document.head.appendChild(script);
+  }, [clientId, onSuccess, onError]);
+  if (!clientId) return <p className="muted google-note">Google sign-in is ready in the code. Add your Google Client ID to turn this button on.</p>;
+  return <div id={buttonId} className="google-signin-slot" />;
+}
+
+function Account() {
+  const { customer, signedIn, register, login, googleLogin, logout } = useCustomer();
+  const nav = useNavigate();
+  const [mode,setMode]=useState('login');
+  const [form,setForm]=useState({name:'',email:'',password:''});
+  const [err,setErr]=useState(''),[msg,setMsg]=useState('');
+  const submit=async e=>{
+    e.preventDefault();
+    setErr(''); setMsg('');
+    try{
+      if(mode==='register') await register(form);
+      else await login(form);
+      setMsg('Signed in. You can now checkout.');
+    }catch(error){setErr(error.message || 'Could not sign in');}
+  };
+  const google = async credential => {
+    setErr(''); setMsg('');
+    try{ await googleLogin(credential); setMsg('Signed in with Google.'); }
+    catch(error){ setErr(error.message || 'Google sign-in failed'); }
+  };
+  if (signedIn) return <main className="account-page"><SectionWithMotionBackground section="login"><PageTitle title="My Account" sub="Your DDKDS checkout profile."/><div className="account-card card"><div className="account-avatar">{customer.picture ? <img src={customer.picture} alt={customer.name}/> : <User/>}</div><h2>{customer.name}</h2><p className="muted">{customer.email}</p><div className="row-actions"><Link className="btn primary" to="/checkout">Continue Checkout</Link><button className="btn ghost" onClick={()=>{logout();nav('/')}}>Sign Out</button></div></div></SectionWithMotionBackground></main>;
+  return <main className="account-page"><SectionWithMotionBackground section="login"><PageTitle title="Customer Account" sub="Create an account or sign in before placing an order."/><form className="form card account-form" onSubmit={submit}><div className="account-tabs"><button type="button" className={mode==='login'?'active':''} onClick={()=>setMode('login')}>Sign in</button><button type="button" className={mode==='register'?'active':''} onClick={()=>setMode('register')}>Create account</button></div>{mode==='register'&&<input required placeholder="Full name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>}<input required type="email" placeholder="Email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/><input required type="password" minLength="6" placeholder="Password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/><button className="btn primary">{mode==='register'?'Create Account':'Sign In'}</button><div className="account-divider"><span>or</span></div><GoogleSignInButton onSuccess={google} onError={setErr}/>{err&&<p className="form-message error-message">{err}</p>}{msg&&<p className="form-message">{msg}</p>}<p className="muted small-text">Your account is for checkout only. Admin stays separate.</p></form></SectionWithMotionBackground></main>;
+}
+
 function Cart() { const {items,remove,update,total}=useCart(); return <main><SectionWithMotionBackground section="checkout"><PageTitle title="Cart" sub="Review your selected DDKDS items."/>{items.map(i=><div className="cart-row card" key={i.key}><img src={API+(i.image||'/placeholder/product-1.svg')} alt={i.name} loading="lazy" decoding="async"/><div><h3>{i.name}</h3><p>{i.size} / {i.color}</p></div><strong>{pesos(i.price)}</strong><input type="number" value={i.qty} onChange={e=>update(i.key,Number(e.target.value))}/><button className="icon-btn" onClick={()=>remove(i.key)}><Trash2/></button></div>)}<div className="checkout-box"><h2>Total: {pesos(total)}</h2><Link className="btn primary" to="/checkout">Checkout</Link></div></SectionWithMotionBackground></main>; }
 
-function Checkout() { const {items,total,clear}=useCart(); const nav=useNavigate(); const [content,setContent]=useState({payment_methods:'GCash,Maya,Bank Transfer,COD',checkout_note:'Alternative ordering: Google Form, Facebook Messenger, Instagram DM, WhatsApp, or email.'}); const [form,setForm]=useState({customer_name:'',email:'',phone:'',address:'',payment_method:'GCash'}); useEffect(()=>{request('/api/site-content').then(x=>{setContent({...content,...x}); const first=String(x.payment_methods||content.payment_methods).split(',').map(v=>v.trim()).filter(Boolean)[0]||'GCash'; setForm(f=>({...f,payment_method:first}));}).catch(()=>{})},[]); const methods=String(content.payment_methods||'GCash,Maya,Bank Transfer,COD').split(',').map(v=>v.trim()).filter(Boolean); const submit=async e=>{e.preventDefault(); const res=await request('/api/orders',{method:'POST',body:JSON.stringify({...form,items,total})}); localStorage.setItem('deadkids_last_order', JSON.stringify({order_number:res.order_number,total,payment_method:form.payment_method,customer_name:form.customer_name})); clear(); nav('/receipt');}; return <main><SectionWithMotionBackground section="checkout"><PageTitle title="Checkout" sub={content.checkout_title || 'Pay securely using your preferred payment method.'}/><form className="form card" onSubmit={submit}>{['customer_name','email','phone','address'].map(k=><input key={k} required={k==='customer_name'} placeholder={k.replace('_',' ')} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>)}<select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}>{methods.map(x=><option key={x}>{x}</option>)}</select><div className="order-summary"><h3>Total: {pesos(total)}</h3><p className="muted">Items: {items.length}</p></div><button className="btn primary">{content.checkout_button || 'Place Order'}</button><p className="muted">{content.checkout_note}</p></form></SectionWithMotionBackground></main>; }
+function Checkout() { const {items,total,clear}=useCart(); const {customer,signedIn}=useCustomer(); const nav=useNavigate(); const [content,setContent]=useState({payment_methods:'GCash,Maya,Bank Transfer,COD',checkout_note:'Alternative ordering: Google Form, Facebook Messenger, Instagram DM, WhatsApp, or email.'}); const [form,setForm]=useState({customer_name:'',email:'',phone:'',address:'',payment_method:'GCash'}); const [err,setErr]=useState(''); useEffect(()=>{request('/api/site-content').then(x=>{setContent({...content,...x}); const first=String(x.payment_methods||content.payment_methods).split(',').map(v=>v.trim()).filter(Boolean)[0]||'GCash'; setForm(f=>({...f,payment_method:first}));}).catch(()=>{})},[]); useEffect(()=>{if(customer)setForm(f=>({...f,customer_name:f.customer_name||customer.name||'',email:f.email||customer.email||''}))},[customer]); const methods=String(content.payment_methods||'GCash,Maya,Bank Transfer,COD').split(',').map(v=>v.trim()).filter(Boolean); const submit=async e=>{e.preventDefault(); setErr(''); try{const res=await customerRequest('/api/orders',{method:'POST',body:JSON.stringify({...form,items,total})}); localStorage.setItem('deadkids_last_order', JSON.stringify({order_number:res.order_number,total,payment_method:form.payment_method,customer_name:form.customer_name})); clear(); nav('/receipt');}catch(error){setErr(error.message || 'Could not place order')}}; if(!signedIn)return <main><SectionWithMotionBackground section="checkout"><PageTitle title="Sign In to Checkout" sub="Create an account or sign in before placing your DDKDS order."/><div className="card checkout-login-card"><User/><h2>Customer account required</h2><p className="muted">This keeps your order connected to your profile and makes checkout cleaner.</p><Link className="btn primary" to="/account">Sign in / Create Account</Link></div></SectionWithMotionBackground></main>; return <main><SectionWithMotionBackground section="checkout"><PageTitle title="Checkout" sub={content.checkout_title || 'Pay securely using your preferred payment method.'}/><form className="form card" onSubmit={submit}>{['customer_name','email','phone','address'].map(k=><input key={k} required={k==='customer_name'} placeholder={k.replace('_',' ')} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/>)}<select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}>{methods.map(x=><option key={x}>{x}</option>)}</select><div className="order-summary"><h3>Total: {pesos(total)}</h3><p className="muted">Items: {items.length}</p></div>{err&&<p className="form-message error-message">{err}</p>}<button className="btn primary">{content.checkout_button || 'Place Order'}</button><p className="muted">{content.checkout_note}</p></form></SectionWithMotionBackground></main>; }
 
 function ReceiptPage(){ const order = safeJson('deadkids_last_order', null); return <main><PageTitle title="Order Receipt" sub="Your order has been received."/><div className="card receipt-card"><ReceiptText className="red"/><h2>Thank you for your order</h2>{order ? <><p><strong>Order Number:</strong> {order.order_number}</p><p><strong>Payment Method:</strong> {order.payment_method}</p><p><strong>Total:</strong> {pesos(order.total)}</p><p><strong>Status:</strong> Pending</p><div className="row-actions"><Link className="btn primary" to="/shop">Back to Shop</Link><Link className="btn ghost" to="/track">Track Order</Link></div></> : <><p>No recent order found.</p><Link className="btn primary" to="/shop">Back to Shop</Link></>}</div></main>}
 

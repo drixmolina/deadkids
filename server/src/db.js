@@ -11,6 +11,7 @@ const dataFile = path.join(dataDir, 'deadkids-db.json');
 
 const emptyData = () => ({
   admins: [],
+  customers: [],
   products: [],
   upcoming_products: [],
   orders: [],
