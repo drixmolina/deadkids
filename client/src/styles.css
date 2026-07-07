@@ -3181,3 +3181,156 @@ body[data-bg-style="image"]{background:linear-gradient(180deg,color-mix(in srgb,
 @media(max-width:980px){.background-manager-grid{grid-template-columns:1fr}.copy-row{grid-template-columns:1fr}}
 @media(max-width:560px){.toggle-control{grid-template-columns:1fr auto}.toggle-control em{grid-column:1/-1}}
 @media(max-width:720px){.motion-bg{display:none}.background-preview .motion-bg{display:block}}
+
+/* Customer de-boxing pass: full-width premium flow, cards stay subtle */
+body{
+  overflow-x:hidden;
+  background:
+    radial-gradient(circle at 0% 10%, rgba(217,4,41,.16), transparent 34%),
+    linear-gradient(90deg, rgba(245,241,232,.028) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(245,241,232,.018) 1px, transparent 1px),
+    linear-gradient(180deg,#050505 0%,#090909 45%,#050505 100%) !important;
+  background-size:auto,76px 76px,76px 76px,auto !important;
+}
+body:has(.app.light),
+body.light-mode{
+  background:
+    radial-gradient(circle at 0% 8%, rgba(217,4,41,.09), transparent 32%),
+    linear-gradient(180deg,#fbf8f2 0%,#f4efe8 48%,#fffaf3 100%) !important;
+}
+.customer-app{
+  background:transparent !important;
+}
+.customer-app main{
+  width:min(1180px,calc(100% - 48px)) !important;
+  padding-top:clamp(24px,4vw,46px) !important;
+}
+.customer-app .luxury-nav,
+.customer-app .nav{
+  border-bottom:0 !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.18) !important;
+}
+.customer-app .nav nav a{
+  border-color:transparent !important;
+  background:transparent !important;
+}
+.customer-app .motion-section,
+.customer-app .premium-hero,
+.customer-app .hero,
+.customer-app .brand-hero,
+.customer-app .hero-card,
+.customer-app .brand-hero-content,
+.customer-app .page-title,
+.customer-app .section-head,
+.customer-app .latest-drop-section,
+.customer-app .drop-strip,
+.customer-app .clean-drop-strip,
+.customer-app .street-split,
+.customer-app .toolbar,
+.customer-app .filter-panel,
+.customer-app .category-tabs,
+.customer-app .details,
+.customer-app .split,
+.customer-app .customer-review-block,
+.customer-app .product-review-section{
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+}
+.customer-app .motion-section{
+  overflow:visible !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  margin-block:clamp(30px,5vw,74px) !important;
+}
+.customer-app .motion-bg{
+  inset:-18px !important;
+  border:0 !important;
+  border-radius:0 !important;
+}
+.customer-app .brand-hero{
+  margin-top:calc(-1 * clamp(24px,4vw,46px)) !important;
+  margin-bottom:clamp(34px,5vw,72px) !important;
+  min-height:min(760px,calc(100vh - 72px)) !important;
+  border-radius:0 !important;
+  background:
+    radial-gradient(circle at 8% 18%, rgba(217,4,41,.20), transparent 34%),
+    linear-gradient(135deg, rgba(245,241,232,.055), transparent 44%),
+    linear-gradient(180deg,#050505 0%,#090909 58%,#050505 100%) !important;
+}
+.customer-app .brand-hero-content,
+.customer-app .hero-card{
+  background:transparent !important;
+  border-radius:0 !important;
+}
+.customer-app .hero-card:before{
+  opacity:.28 !important;
+}
+.customer-app section,
+.customer-app .latest-drop-section,
+.customer-app .drop-strip,
+.customer-app .clean-drop-strip,
+.customer-app .street-split,
+.customer-app .toolbar,
+.customer-app .filter-panel,
+.customer-app .category-tabs,
+.customer-app .page-title{
+  background:transparent !important;
+}
+.customer-app .drop-strip,
+.customer-app .clean-drop-strip,
+.customer-app .street-split{
+  padding-inline:0 !important;
+}
+.customer-app .toolbar,
+.customer-app .filter-panel,
+.customer-app .category-tabs{
+  padding-inline:0 !important;
+}
+.customer-app .luxury-product,
+.customer-app .product.card,
+.customer-app .review-card,
+.customer-app .receipt-card,
+.customer-app .size-guide-card{
+  border:1px solid rgba(255,255,255,.08) !important;
+  box-shadow:0 14px 32px rgba(0,0,0,.18) !important;
+}
+.customer-app .luxury-product,
+.customer-app .product.card{
+  background:linear-gradient(180deg,#101010,#0b0b0b) !important;
+}
+.app.light.customer-app .luxury-product,
+.app.light.customer-app .product.card,
+.app.light.customer-app .review-card,
+.app.light.customer-app .receipt-card,
+.app.light.customer-app .size-guide-card{
+  border:1px solid #e5e5e5 !important;
+  box-shadow:0 12px 28px rgba(20,17,15,.08) !important;
+}
+.app.light.customer-app .brand-hero{
+  background:
+    radial-gradient(circle at 6% 16%, rgba(217,4,41,.10), transparent 34%),
+    linear-gradient(135deg, rgba(20,17,15,.045), transparent 42%),
+    linear-gradient(180deg,#fbf8f2 0%,#f4efe8 58%,#fffaf3 100%) !important;
+}
+.app.light.customer-app .toolbar,
+.app.light.customer-app .filter-panel,
+.app.light.customer-app .category-tabs,
+.app.light.customer-app .page-title,
+.app.light.customer-app .drop-strip,
+.app.light.customer-app .clean-drop-strip,
+.app.light.customer-app .street-split{
+  background:transparent !important;
+  border:0 !important;
+}
+@media(max-width:900px){
+  .customer-app main{width:calc(100% - 28px) !important;}
+  .customer-app .brand-hero{
+    min-height:auto !important;
+    margin-top:calc(-1 * clamp(20px,5vw,32px)) !important;
+  }
+}
+@media(max-width:560px){
+  .customer-app main{width:calc(100% - 20px) !important;}
+  .customer-app .brand-hero{padding-inline:20px !important;}
+}
