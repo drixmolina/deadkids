@@ -9,6 +9,8 @@ export default function BackgroundManager() {
   const { settings, setSettings, save, reset, loading } = useBackgroundSettings();
   const [section, setSection] = useState('hero');
   const [copyFrom, setCopyFrom] = useState('hero');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const draft = mergeBackgroundSettings(settings);
   const current = draft.sections[section];
   const presetNames = useMemo(() => Object.keys(backgroundPresets), []);
@@ -22,6 +24,26 @@ export default function BackgroundManager() {
     setSettings({ ...draft, sections });
   };
   const copySettings = () => updateSection(draft.sections[copyFrom]);
+  const saveSettings = async next => {
+    setError('');
+    setMessage('');
+    try {
+      await save(next);
+      setMessage('Background settings saved.');
+    } catch (err) {
+      setError(err.message || 'Could not save background settings.');
+    }
+  };
+  const resetSettings = async () => {
+    setError('');
+    setMessage('');
+    try {
+      await reset();
+      setMessage('Background settings reset.');
+    } catch (err) {
+      setError(err.message || 'Could not reset background settings.');
+    }
+  };
 
   const colorFields = [
     ['base', 'Main color'],
@@ -48,10 +70,12 @@ export default function BackgroundManager() {
         <p className="muted">Change the moving backgrounds behind each part of the website. Content and buttons stay clickable.</p>
       </div>
       <div className="row-actions">
-        <button className="btn ghost" type="button" onClick={() => reset()}>Reset to Default</button>
-        <button className="btn primary" type="button" onClick={() => save(draft)}>Save Settings</button>
+        <button className="btn ghost" type="button" onClick={resetSettings}>Reset to Default</button>
+        <button className="btn primary" type="button" onClick={() => saveSettings(draft)}>Save Settings</button>
       </div>
     </div>
+    {error && <div className="admin-help"><strong>Backgrounds need attention</strong><p>{error}</p></div>}
+    {message && <p className="form-message">{message}</p>}
 
     <div className="card admin-editor">
       <div className="toggle-grid">

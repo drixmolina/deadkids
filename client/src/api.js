@@ -7,6 +7,13 @@ export async function request(path, options = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`${API}${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    localStorage.removeItem('deadkids_token');
+    if (path !== '/api/auth/login' && window.location.pathname.startsWith('/admin')) {
+      window.location.href = '/admin/login';
+    }
+    throw new Error('Admin login expired. Please log in again.');
+  }
   if (!res.ok) throw new Error(data.message || 'Request failed');
   return data;
 }

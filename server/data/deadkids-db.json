@@ -255,6 +255,18 @@
       "status": "Approved",
       "featured": 1,
       "created_at": "2026-07-01T18:56:35.096Z"
+    },
+    {
+      "id": 2,
+      "product_id": "",
+      "product_name": "",
+      "customer_name": "dd",
+      "rating": 5,
+      "comment": "dsd",
+      "status": "Pending",
+      "featured": 1,
+      "created_at": "2026-07-07T08:24:25.601Z",
+      "updated_at": "2026-07-07T08:24:41.613Z"
     }
   ],
   "promo_codes": [
@@ -471,7 +483,7 @@
         "position": "center"
       }
     },
-    "updated_at": "2026-07-07T02:28:15.597Z"
+    "updated_at": "2026-07-07T14:12:48.258Z"
   },
   "site_content": {
     "nav_brand": "DDKDS",
@@ -537,7 +549,7 @@
     "checkout_button": "Place Order",
     "checkout_note": "Alternative ordering: Google Form, Facebook Messenger, Instagram DM, WhatsApp, or email.",
     "shipping_note": "Local delivery / nationwide shipping available.",
-    "music_enabled": true,
+    "music_enabled": false,
     "music_video_id": "g4dScvHrXC8",
     "music_title": "DDKDS SOUND",
     "drop_title": "NEXT DROP LOADING",
@@ -546,6 +558,6 @@
     "countdown_location": "Both",
     "notify_enabled": true,
     "auto_release_enabled": true,
-    "updated_at": "2026-07-05T20:07:23.814Z"
+    "updated_at": "2026-07-07T14:14:16.981Z"
   }
 }
