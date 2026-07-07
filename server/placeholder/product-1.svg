@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="900" viewBox="0 0 800 900">
+  <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#111"/><stop offset="1" stop-color="#d90429"/></linearGradient></defs>
+  <rect width="800" height="900" fill="#070707"/>
+  <circle cx="650" cy="170" r="180" fill="#d90429" opacity="0.25"/>
+  <rect x="130" y="180" width="540" height="540" rx="48" fill="url(#g)" stroke="#fff" stroke-opacity=".18"/>
+  <text x="400" y="420" text-anchor="middle" font-size="68" fill="#fff" font-family="Arial" font-weight="700">DEADKIDS</text>
+  <text x="400" y="500" text-anchor="middle" font-size="38" fill="#fff" font-family="Arial">DEADKIDS</text>
+  <text x="400" y="785" text-anchor="middle" font-size="28" fill="#ddd" font-family="Arial">STREETWEAR #1</text>
+</svg>

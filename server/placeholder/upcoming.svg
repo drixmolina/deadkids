@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="650" viewBox="0 0 1000 650">
+  <rect width="1000" height="650" fill="#050505"/>
+  <path d="M0 560 C260 430 450 720 1000 440 L1000 650 L0 650Z" fill="#d90429" opacity="0.75"/>
+  <text x="500" y="265" text-anchor="middle" font-size="80" fill="#fff" font-family="Arial" font-weight="800">COMING SOON</text>
+  <text x="500" y="345" text-anchor="middle" font-size="44" fill="#f5f5f5" font-family="Arial">DEADKIDS DROP</text>
+</svg>
