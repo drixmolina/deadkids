@@ -330,6 +330,7 @@ function Home() {
     </section>
     </SectionWithMotionBackground>
     <Marquee/>
+    <FeaturedVisualRunway products={products}/>
     <SectionWithMotionBackground section="countdown"><section className="latest-drop-section"><div className="section-head"><p className="eyebrow">LATEST DROP</p><h2>{content.latest_drop_title || 'DDKDS REDLINE COLLECTION'}</h2><p className="muted">{content.latest_drop_description || siteDefaults.latest_drop_description}</p></div><div className="grid four">{products.slice(0,4).map(p => <ProductCard key={p.id} product={p}/>)}</div></section></SectionWithMotionBackground>
     <ProductSection title="Featured Products" products={products}/>
     <CustomerReviewsSection reviews={reviews} compact={true}/>
@@ -338,6 +339,41 @@ function Home() {
 
 
 function Marquee(){ return <div className="marquee luxury-marquee"><div>DDKDS CLO. / PRIVATE DROP / Y2K CHROME / PREMIUM STREET ESSENTIALS / LIMITED STOCK / NO RESTOCK / </div></div>; }
+
+function FeaturedVisualRunway({ products=[] }) {
+  const productShots = products.flatMap(product => {
+    const images = product.images?.length ? product.images : ['/placeholder/product-1.svg'];
+    return images.slice(0, 3).map((image, index) => ({
+      image,
+      name: product.name,
+      label: index === 0 ? 'Model fit' : index === 1 ? 'Design detail' : 'Drop preview',
+      category: product.category
+    }));
+  });
+  const shots = productShots.length ? productShots : [
+    { image: '/placeholder/product-1.svg', name: 'DDKDS fit preview', label: 'Model fit', category: 'Streetwear' },
+    { image: '/placeholder/product-2.svg', name: 'Chrome design detail', label: 'Design detail', category: 'Y2K' },
+    { image: '/placeholder/product-3.svg', name: 'Drop styling', label: 'Drop preview', category: 'Limited' }
+  ];
+  const loop = [...shots, ...shots];
+  return <section className="visual-runway" aria-label="Featured model and design photos">
+    <div className="visual-runway-head">
+      <div>
+        <p className="eyebrow">MODEL / DESIGN / DETAIL</p>
+        <h2>Featured Visuals</h2>
+      </div>
+      <span>Moving lookbook</span>
+    </div>
+    <div className="visual-runway-track-wrap">
+      <div className="visual-runway-track">
+        {loop.map((shot, index) => <figure className="visual-shot" key={`${shot.image}-${index}`}>
+          <img src={asset(shot.image)} alt={`${shot.name} ${shot.label}`} loading="lazy" decoding="async"/>
+          <figcaption><span>{shot.label}</span><strong>{shot.name}</strong><small>{shot.category}</small></figcaption>
+        </figure>)}
+      </div>
+    </div>
+  </section>;
+}
 
 function ProductSection({ title, products }) { return <SectionWithMotionBackground section="products"><section><h2>{title}</h2><div className="grid four">{products.map(p => <ProductCard key={p.id} product={p}/>)}</div></section></SectionWithMotionBackground>; }
 function ProductCard({ product }) {
