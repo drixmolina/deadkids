@@ -4275,3 +4275,348 @@ body{
     margin-top:22px;
   }
 }
+
+/* DBTK-inspired clean hero/nav pass */
+body.side-nav-open{
+  overflow:hidden !important;
+}
+.customer-app .page-fade-shell{
+  overflow:hidden;
+}
+.customer-app main{
+  padding-top:0 !important;
+}
+.customer-app .dbtk-nav{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:500 !important;
+  height:72px !important;
+  display:grid !important;
+  grid-template-columns:72px 1fr 112px !important;
+  align-items:center !important;
+  padding:0 clamp(16px,3vw,42px) !important;
+  border:0 !important;
+  box-shadow:none !important;
+  background:linear-gradient(180deg,rgba(0,0,0,.62),rgba(0,0,0,0)) !important;
+  backdrop-filter:none !important;
+  transform:none !important;
+}
+body.nav-hidden .customer-app .dbtk-nav,
+.customer-app .dbtk-nav:hover,
+.customer-app .dbtk-nav:focus-within{
+  transform:none !important;
+}
+.hamburger-btn{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  border:0;
+  border-radius:0 !important;
+  background:#fff !important;
+  color:#050505 !important;
+  cursor:pointer;
+  box-shadow:0 12px 28px rgba(0,0,0,.22);
+}
+.centered-logo{
+  justify-self:center !important;
+  align-self:center !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  z-index:2;
+  color:#fff !important;
+  font-size:clamp(22px,2.4vw,34px) !important;
+  line-height:1 !important;
+  text-shadow:0 4px 22px rgba(0,0,0,.55);
+  white-space:nowrap;
+}
+.centered-logo span{
+  color:var(--red2) !important;
+}
+.compact-nav-actions{
+  justify-self:end;
+  display:flex !important;
+  align-items:center;
+  gap:10px !important;
+}
+.compact-nav-actions .icon-btn,
+.compact-nav-actions .cart-pill{
+  width:40px !important;
+  height:40px !important;
+  min-height:40px !important;
+  padding:0 !important;
+  display:grid !important;
+  place-items:center !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:rgba(0,0,0,.34) !important;
+  color:#fff !important;
+  box-shadow:none !important;
+}
+.compact-nav-actions .cart-pill{
+  position:relative;
+}
+.compact-nav-actions .cart-pill span{
+  position:absolute;
+  right:-7px;
+  top:-7px;
+  min-width:18px;
+  height:18px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:var(--red);
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  line-height:1;
+}
+.side-nav-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:700;
+  background:rgba(0,0,0,.58);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .28s ease;
+}
+.side-nav-backdrop.open{
+  opacity:1;
+  pointer-events:auto;
+}
+.side-drawer{
+  position:fixed;
+  z-index:701;
+  top:0;
+  left:0;
+  bottom:0;
+  width:min(360px,86vw);
+  padding:22px;
+  background:linear-gradient(180deg,#080808,#050505) !important;
+  color:#fff;
+  transform:translateX(-104%);
+  transition:transform .32s cubic-bezier(.22,.9,.22,1);
+  box-shadow:24px 0 80px rgba(0,0,0,.45);
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+}
+.side-drawer.open{
+  transform:translateX(0);
+}
+.side-drawer-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.side-drawer-head strong{
+  font-size:24px;
+  font-weight:1000;
+  letter-spacing:0;
+}
+.side-drawer-head span{
+  color:var(--red2);
+  font-family:Georgia,serif;
+  font-style:italic;
+}
+.side-drawer-head button{
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.12);
+  background:#111;
+  color:#fff;
+  border-radius:0;
+  cursor:pointer;
+}
+.side-drawer-links{
+  display:grid !important;
+  gap:0;
+}
+.side-drawer-links a{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:18px 0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#fff;
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.side-drawer-links a.active,
+.side-drawer-links a:hover{
+  color:var(--red2);
+}
+.side-theme-toggle{
+  margin-top:auto;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  border:1px solid rgba(255,255,255,.12);
+  background:#101010;
+  color:#fff;
+  padding:14px;
+  border-radius:0;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  cursor:pointer;
+}
+.customer-app .dbtk-hero{
+  position:relative !important;
+  width:100vw !important;
+  max-width:100vw !important;
+  height:clamp(560px,78vh,860px) !important;
+  min-height:0 !important;
+  margin:0 calc(50% - 50vw) !important;
+  padding:0 !important;
+  display:block !important;
+  overflow:hidden !important;
+  background:#050505 !important;
+}
+.dbtk-hero-img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  transform:scale(1.01);
+  filter:saturate(1.08) contrast(1.08);
+}
+.dbtk-hero-overlay{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.74),rgba(0,0,0,.34) 44%,rgba(0,0,0,.18)),
+    radial-gradient(circle at 0% 40%,rgba(217,4,41,.25),transparent 34%);
+  pointer-events:none;
+}
+.dbtk-hero-content{
+  position:absolute;
+  z-index:2;
+  left:max(24px,calc((100vw - 1180px) / 2));
+  bottom:clamp(54px,9vh,120px);
+  width:min(680px,calc(100vw - 48px));
+  color:#fff;
+}
+.dbtk-hero-content .eyebrow{
+  color:#fff !important;
+  margin:0 0 10px;
+}
+.dbtk-hero-content h1{
+  margin:0 0 12px !important;
+  font-size:clamp(54px,9vw,138px) !important;
+  line-height:.82 !important;
+}
+.dbtk-hero-content .brand-story{
+  max-width:560px !important;
+  color:rgba(255,255,255,.86) !important;
+  font-size:clamp(14px,1.4vw,18px) !important;
+  line-height:1.7 !important;
+}
+.customer-app .brand-hero-notes,
+.customer-app .hero-actions{
+  display:none !important;
+}
+.customer-app .marquee,
+.customer-app .luxury-marquee{
+  border:0 !important;
+  box-shadow:none !important;
+  background:#050505 !important;
+  margin-top:0 !important;
+}
+.customer-app .marquee div,
+.customer-app .luxury-marquee div{
+  padding:14px 0 !important;
+  text-shadow:none !important;
+}
+.customer-app .visual-runway{
+  margin-top:clamp(26px,4vw,52px) !important;
+}
+.customer-app .visual-runway,
+.customer-app .latest-drop-section,
+.customer-app .motion-section-countdown,
+.customer-app .motion-section-products{
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+}
+.customer-app .motion-section-countdown .motion-bg,
+.customer-app .motion-section-products .motion-bg{
+  display:none !important;
+}
+.customer-app .visual-runway::before,
+.customer-app .visual-runway::after,
+.customer-app .latest-drop-section::before,
+.customer-app .latest-drop-section::after{
+  display:none !important;
+}
+.app.light.customer-app .dbtk-nav{
+  background:linear-gradient(180deg,rgba(255,255,255,.56),rgba(255,255,255,0)) !important;
+}
+.app.light.customer-app .centered-logo{
+  color:#fff !important;
+}
+.app.light.customer-app .side-drawer{
+  background:#fffdfa !important;
+  color:#14110f;
+}
+.app.light.customer-app .side-drawer-head button,
+.app.light.customer-app .side-theme-toggle{
+  background:#f4eee6;
+  color:#14110f;
+  border-color:#e4d8ce;
+}
+.app.light.customer-app .side-drawer-links a{
+  color:#14110f;
+  border-bottom-color:#eadfd6;
+}
+@media(max-width:760px){
+  .customer-app .dbtk-nav{
+    height:62px !important;
+    grid-template-columns:52px 1fr 92px !important;
+    padding-inline:12px !important;
+  }
+  .hamburger-btn{
+    width:40px;
+    height:40px;
+  }
+  .compact-nav-actions{
+    gap:7px !important;
+  }
+  .compact-nav-actions .icon-btn,
+  .compact-nav-actions .cart-pill{
+    width:36px !important;
+    height:36px !important;
+    min-height:36px !important;
+  }
+  .centered-logo{
+    font-size:20px !important;
+  }
+  .customer-app .dbtk-hero{
+    height:clamp(430px,60vh,620px) !important;
+  }
+  .dbtk-hero-content{
+    left:18px;
+    bottom:38px;
+    width:calc(100vw - 36px);
+  }
+  .dbtk-hero-content h1{
+    font-size:clamp(48px,15vw,82px) !important;
+  }
+  .dbtk-hero-content .brand-story{
+    font-size:13px !important;
+    max-width:92vw !important;
+  }
+}

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Heart, Search, ShoppingBag, Moon, Sun, Trash2, LogOut, Package, LayoutDashboard, MessageSquare, Star, Plus, UploadCloud, X, SlidersHorizontal, Ruler, ReceiptText, Settings, Sparkles, User } from 'lucide-react';
+import { Heart, Search, ShoppingBag, Moon, Sun, Trash2, LogOut, Package, LayoutDashboard, MessageSquare, Star, Plus, UploadCloud, X, SlidersHorizontal, Ruler, ReceiptText, Settings, Sparkles, User, Menu } from 'lucide-react';
 import { API, request, customerRequest, uploadImage } from './api.js';
 import BackgroundManager from './BackgroundManager.jsx';
 import SectionWithMotionBackground from './SectionWithMotionBackground.jsx';
@@ -291,9 +291,33 @@ function AppShell({ light, setLight }) {
 function Navbar({ light, setLight }) {
   const { items } = useCart();
   const { customer } = useCustomer();
+  const [open,setOpen]=useState(false);
   const [content,setContent]=useState(siteDefaults);
   useEffect(()=>{request('/api/site-content').then(x=>setContent({...siteDefaults,...x})).catch(()=>{})},[]);
-  return <header className="nav customer-nav luxury-nav"><div className="nav-brand-wrap"><Link to="/" className="logo">{content.nav_brand} <span>{content.nav_brand_accent}</span></Link><small>{content.nav_tagline}</small></div><nav><NavLink to="/shop">{content.nav_shop_label}</NavLink><NavLink to="/reviews">{content.nav_reviews_label}</NavLink><NavLink to="/contact">{content.nav_contact_label}</NavLink></nav><div className="nav-actions"><button className="icon-btn" aria-label="Toggle theme" onClick={() => setLight(!light)}>{light ? <Moon/> : <Sun/>}</button><Link className="account-pill" to="/account"><User size={16}/><span>{customer ? 'Account' : 'Sign in'}</span></Link><Link className="cart-pill" to="/cart"><ShoppingBag size={18}/><span>{items.length}</span></Link></div></header>;
+  useEffect(()=>{document.body.classList.toggle('side-nav-open', open);return()=>document.body.classList.remove('side-nav-open')},[open]);
+  const close=()=>setOpen(false);
+  return <>
+    <header className="nav customer-nav luxury-nav dbtk-nav">
+      <button className="hamburger-btn" type="button" aria-label="Open menu" onClick={()=>setOpen(true)}><Menu size={25}/></button>
+      <Link to="/" className="logo centered-logo" onClick={close}>{content.nav_brand} <span>{content.nav_brand_accent}</span></Link>
+      <div className="nav-actions compact-nav-actions">
+        <Link className="icon-btn account-icon" to="/account" aria-label={customer ? 'Account' : 'Sign in'}><User size={18}/></Link>
+        <Link className="cart-pill icon-cart" to="/cart" aria-label="Cart"><ShoppingBag size={18}/><span>{items.length}</span></Link>
+      </div>
+    </header>
+    <div className={`side-nav-backdrop ${open?'open':''}`} onClick={close}/>
+    <aside className={`side-drawer ${open?'open':''}`} aria-hidden={!open}>
+      <div className="side-drawer-head"><strong>DDKDS <span>CLO.</span></strong><button type="button" aria-label="Close menu" onClick={close}><X size={20}/></button></div>
+      <nav className="side-drawer-links">
+        <NavLink to="/shop" onClick={close}>{content.nav_shop_label || 'Shop'}</NavLink>
+        <NavLink to="/reviews" onClick={close}>{content.nav_reviews_label || 'Reviews'}</NavLink>
+        <NavLink to="/contact" onClick={close}>{content.nav_contact_label || 'Contact'}</NavLink>
+        <NavLink to="/account" onClick={close}>{customer ? 'Account' : 'Sign In'}</NavLink>
+        <NavLink to="/admin/login" onClick={close}>Admin Portal</NavLink>
+      </nav>
+      <button className="side-theme-toggle" type="button" onClick={()=>setLight(!light)}>{light ? <Moon size={18}/> : <Sun size={18}/>} {light ? 'Dark mode' : 'Light mode'}</button>
+    </aside>
+  </>;
 }
 
 function Home() {
@@ -311,24 +335,17 @@ function Home() {
     }
     loadHome().catch(console.error);
   }, []);
+  const heroImage = content.hero_banner_image ? asset(content.hero_banner_image) : '/ddkds-hero-banner.jpg';
   return <main>
-    <SectionWithMotionBackground section="hero" className="hero-motion-wrap">
-    <section className="hero premium-hero brand-hero">
-      <div className="hero-card brand-hero-content reveal">
-        <p className="eyebrow">{content.hero_eyebrow}</p>
-        <h1 className="glitch" data-text={content.hero_title || 'DDKDS CLO.'}>{content.hero_title || 'DDKDS CLO.'}</h1>
-        <h2>{content.hero_subtitle || 'ELEGANT Y2K STREETWEAR.'}</h2>
+    <section className="hero premium-hero brand-hero dbtk-hero">
+      <img className="dbtk-hero-img" src={heroImage} alt="DDKDS CLO streetwear hero banner" loading="eager" decoding="async"/>
+      <div className="dbtk-hero-overlay"/>
+      <div className="dbtk-hero-content reveal">
+        <p className="eyebrow">{content.hero_eyebrow || 'LUXURY / Y2K / STREETWEAR'}</p>
+        <h1 className="glitch" data-text={content.hero_title || 'DEADKIDS'}>{content.hero_title || 'DEADKIDS'}</h1>
         <p className="brand-story">{content.hero_story}</p>
-        <div className="brand-hero-notes" aria-label="Brand values">
-          <span>{content.hero_note_1}</span>
-          <span>{content.hero_note_2}</span>
-          <span>{content.hero_note_3}</span>
-          <span>{content.hero_note_4}</span>
-        </div>
-        <div className="hero-actions magnetic-zone"><Link to="/shop" className="btn primary magnetic">{content.hero_primary_button}</Link><Link to="/reviews" className="btn ghost magnetic">{content.hero_secondary_button}</Link></div>
       </div>
     </section>
-    </SectionWithMotionBackground>
     <Marquee/>
     <FeaturedVisualRunway products={products}/>
     <SectionWithMotionBackground section="countdown"><section className="latest-drop-section"><div className="section-head"><p className="eyebrow">LATEST DROP</p><h2>{content.latest_drop_title || 'DDKDS REDLINE COLLECTION'}</h2><p className="muted">{content.latest_drop_description || siteDefaults.latest_drop_description}</p></div><div className="grid four">{products.slice(0,4).map(p => <ProductCard key={p.id} product={p}/>)}</div></section></SectionWithMotionBackground>
