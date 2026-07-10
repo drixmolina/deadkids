@@ -183,6 +183,19 @@ function productFromBody(body) {
   };
 }
 
+function heroBannerFromBody(body) {
+  return {
+    image_url: safeString(body.image_url || body.image),
+    small_label: safeString(body.small_label),
+    heading: safeString(body.heading),
+    subtitle: safeString(body.subtitle),
+    button_text: safeString(body.button_text),
+    button_link: safeString(body.button_link, '/shop'),
+    enabled: bool(body.enabled),
+    sort_order: safeNumber(body.sort_order ?? body.sortOrder, 9999)
+  };
+}
+
 function sortNewest(rows) {
   return [...rows].sort((a, b) => {
     const ao = Number(a.sort_order ?? 9999);
@@ -271,6 +284,49 @@ app.get('/api/products', (req, res) => {
     return true;
   });
   res.json(sortNewest(rows));
+});
+
+app.get('/api/hero-banners', (req, res) => {
+  res.json(sortNewest((data.hero_banners || []).filter(banner => banner.enabled && banner.image_url)));
+});
+
+app.get('/api/admin/hero-banners', requireAdmin, (req, res) => {
+  res.json(sortNewest(data.hero_banners || []));
+});
+
+app.post('/api/admin/hero-banners', requireAdmin, (req, res) => {
+  const maxOrder = Math.max(0, ...(data.hero_banners || []).map(item => Number(item.sort_order || 0)));
+  const banner = heroBannerFromBody(req.body);
+  if (!banner.image_url) return res.status(400).json({ message: 'Hero image is required' });
+  const row = insert('hero_banners', { ...banner, sort_order: safeNumber(req.body.sort_order, maxOrder + 1), created_at: timestamp(), updated_at: timestamp() });
+  res.status(201).json(row);
+});
+
+app.put('/api/admin/hero-banners/reorder/list', requireAdmin, (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) return res.status(400).json({ message: 'ids must be an array' });
+  ids.forEach((id, index) => {
+    const banner = data.hero_banners.find(item => Number(item.id) === Number(id));
+    if (banner) {
+      banner.sort_order = index + 1;
+      banner.updated_at = timestamp();
+    }
+  });
+  saveDb();
+  res.json({ message: 'Hero banner order saved', hero_banners: sortNewest(data.hero_banners || []) });
+});
+
+app.put('/api/admin/hero-banners/:id', requireAdmin, (req, res) => {
+  const banner = heroBannerFromBody(req.body);
+  if (!banner.image_url) return res.status(400).json({ message: 'Hero image is required' });
+  const row = update('hero_banners', req.params.id, banner);
+  if (!row) return res.status(404).json({ message: 'Hero banner not found' });
+  res.json({ message: 'Hero banner updated', hero_banner: row });
+});
+
+app.delete('/api/admin/hero-banners/:id', requireAdmin, (req, res) => {
+  remove('hero_banners', req.params.id);
+  res.json({ message: 'Hero banner deleted' });
 });
 
 app.put('/api/products/reorder/list', requireAdmin, (req, res) => {

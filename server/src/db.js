@@ -19,6 +19,21 @@ const emptyData = () => ({
   promo_codes: [],
   notify_requests: [],
   contact_messages: [],
+  hero_banners: [
+    {
+      id: 1,
+      image_url: '/ddkds-hero-banner.jpg',
+      small_label: 'LUXURY / Y2K / STREETWEAR',
+      heading: 'DEADKIDS',
+      subtitle: 'DDKDS CLO. is built for clean silhouettes, chrome-era attitude, and limited streetwear drops that feel premium, wearable, and loud in the right way.',
+      button_text: '',
+      button_link: '/shop',
+      enabled: 1,
+      sort_order: 1,
+      created_at: now(),
+      updated_at: now()
+    }
+  ],
   background_settings: {
     globalEnabled: true,
     productTiltEnabled: true,
@@ -148,6 +163,19 @@ export function initDb() {
 
   data.site_content = { ...emptyData().site_content, ...(data.site_content || {}) };
   data.background_settings = { ...emptyData().background_settings, ...(data.background_settings || {}), sections: { ...emptyData().background_settings.sections, ...(data.background_settings?.sections || {}) } };
+  data.hero_banners = (data.hero_banners || emptyData().hero_banners).map((banner, index) => ({
+    id: banner.id ?? index + 1,
+    image_url: banner.image_url || banner.image || '/ddkds-hero-banner.jpg',
+    small_label: banner.small_label || '',
+    heading: banner.heading || '',
+    subtitle: banner.subtitle || '',
+    button_text: banner.button_text || '',
+    button_link: banner.button_link || '/shop',
+    enabled: banner.enabled ?? 1,
+    sort_order: banner.sort_order ?? index + 1,
+    created_at: banner.created_at || now(),
+    updated_at: banner.updated_at || now()
+  }));
   data.products = (data.products || []).map((product, index) => ({
     ...product,
     sort_order: product.sort_order ?? index + 1,

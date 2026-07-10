@@ -4313,12 +4313,12 @@ body.nav-hidden .customer-app .dbtk-nav,
   height:44px;
   display:grid;
   place-items:center;
-  border:0;
+  border:1px solid rgba(255,255,255,.14) !important;
   border-radius:0 !important;
-  background:#fff !important;
-  color:#050505 !important;
+  background:rgba(5,5,5,.72) !important;
+  color:#fff !important;
   cursor:pointer;
-  box-shadow:0 12px 28px rgba(0,0,0,.22);
+  box-shadow:0 12px 28px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
 }
 .centered-logo{
   justify-self:center !important;
@@ -4358,7 +4358,7 @@ body.nav-hidden .customer-app .dbtk-nav,
   border-radius:0 !important;
   background:rgba(0,0,0,.34) !important;
   color:#fff !important;
-  box-shadow:none !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important;
 }
 .compact-nav-actions .cart-pill{
   position:relative;
@@ -4497,6 +4497,13 @@ body.nav-hidden .customer-app .dbtk-nav,
   transform:scale(1.01);
   filter:saturate(1.08) contrast(1.08);
 }
+.hero-slide{
+  opacity:0;
+  transition:opacity .85s ease;
+}
+.hero-slide.active{
+  opacity:1;
+}
 .dbtk-hero-overlay{
   position:absolute;
   inset:0;
@@ -4528,6 +4535,44 @@ body.nav-hidden .customer-app .dbtk-nav,
   font-size:clamp(14px,1.4vw,18px) !important;
   line-height:1.7 !important;
 }
+.hero-banner-btn{
+  margin-top:18px;
+}
+.hero-carousel-controls{
+  position:absolute;
+  z-index:3;
+  right:clamp(18px,4vw,54px);
+  bottom:clamp(20px,5vh,46px);
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.hero-carousel-controls button{
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.48);
+  color:#fff;
+  cursor:pointer;
+}
+.hero-carousel-indicators{
+  display:flex;
+  gap:7px;
+  align-items:center;
+}
+.hero-carousel-indicators button{
+  width:24px;
+  height:3px;
+  padding:0;
+  border:0;
+  background:rgba(255,255,255,.35);
+}
+.hero-carousel-indicators button.active{
+  background:var(--red2);
+  box-shadow:0 0 14px rgba(255,42,79,.5);
+}
 .customer-app .brand-hero-notes,
 .customer-app .hero-actions{
   display:none !important;
@@ -4541,8 +4586,9 @@ body.nav-hidden .customer-app .dbtk-nav,
 }
 .customer-app .marquee div,
 .customer-app .luxury-marquee div{
-  padding:14px 0 !important;
+  padding:14px 0 16px !important;
   text-shadow:none !important;
+  line-height:1.05 !important;
 }
 .customer-app .visual-runway{
   margin-top:clamp(26px,4vw,52px) !important;
@@ -4624,4 +4670,85 @@ body.nav-hidden .customer-app .dbtk-nav,
     font-size:13px !important;
     max-width:92vw !important;
   }
+  .hero-carousel-controls{
+    left:18px;
+    right:auto;
+    bottom:14px;
+  }
+  .hero-carousel-controls button{
+    width:34px;
+    height:34px;
+  }
+}
+
+/* Admin hero banner manager */
+.hero-banner-editor{
+  max-width:1120px !important;
+}
+.hero-banner-preview{
+  position:relative;
+  min-height:230px;
+  overflow:hidden;
+  background:#050505;
+  border:1px solid rgba(255,255,255,.1);
+}
+.hero-banner-preview img{
+  width:100%;
+  height:clamp(230px,32vw,380px);
+  object-fit:cover;
+  display:block;
+  filter:saturate(1.06) contrast(1.06);
+}
+.hero-banner-preview div{
+  position:absolute;
+  left:24px;
+  bottom:22px;
+  max-width:520px;
+  color:#fff;
+}
+.hero-banner-preview span{
+  color:var(--red2);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+.hero-banner-preview strong{
+  display:block;
+  font-size:clamp(34px,6vw,72px);
+  line-height:.9;
+  margin:8px 0;
+}
+.hero-banner-preview p{
+  color:rgba(255,255,255,.82);
+  margin:0;
+}
+.hero-admin-control{
+  margin-bottom:16px;
+}
+.hero-banner-admin-grid{
+  margin-top:20px;
+}
+.hero-admin-card{
+  text-align:left;
+}
+.hero-admin-card > img{
+  width:100%;
+  aspect-ratio:16/7;
+  object-fit:cover;
+  background:#050505;
+  margin-bottom:14px;
+}
+.hero-admin-card h3{
+  margin:10px 0 4px;
+}
+.hero-admin-card .row-actions{
+  margin-top:16px;
+}
+.app.light.customer-app .hamburger-btn,
+.app.light.customer-app .compact-nav-actions .icon-btn,
+.app.light.customer-app .compact-nav-actions .cart-pill{
+  background:rgba(5,5,5,.42) !important;
+  color:#fff !important;
+  border-color:rgba(255,255,255,.18) !important;
 }

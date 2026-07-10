@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Heart, Search, ShoppingBag, Moon, Sun, Trash2, LogOut, Package, LayoutDashboard, MessageSquare, Star, Plus, UploadCloud, X, SlidersHorizontal, Ruler, ReceiptText, Settings, Sparkles, User, Menu } from 'lucide-react';
+import { Heart, Search, ShoppingBag, Moon, Sun, Trash2, LogOut, Package, LayoutDashboard, MessageSquare, Star, Plus, UploadCloud, X, SlidersHorizontal, Ruler, ReceiptText, Settings, Sparkles, User, Menu, ChevronLeft, ChevronRight, ImagePlus } from 'lucide-react';
 import { API, request, customerRequest, uploadImage } from './api.js';
 import BackgroundManager from './BackgroundManager.jsx';
 import SectionWithMotionBackground from './SectionWithMotionBackground.jsx';
@@ -26,6 +26,7 @@ const safeJson = (key, fallback) => {
 };
 const pesos = n => `₱${toNumber(n).toLocaleString()}`;
 const asset = path => !path ? `${API}/placeholder/product-1.svg` : (String(path).startsWith('http') ? path : `${API}${path}`);
+const heroAsset = path => !path ? '/ddkds-hero-banner.jpg' : (String(path).startsWith('http') ? path : (String(path).startsWith('/uploads') || String(path).startsWith('/placeholder') ? `${API}${path}` : path));
 const siteDefaults = {
   nav_brand: 'DDKDS', nav_brand_accent: 'CLO.', nav_tagline: 'Limited streetwear atelier',
   nav_shop_label: 'Shop', nav_size_label: 'Sizing', nav_reviews_label: 'Reviews', nav_track_label: 'Track', nav_contact_label: 'Contact', nav_admin_label: 'Admin',
@@ -320,32 +321,61 @@ function Navbar({ light, setLight }) {
   </>;
 }
 
+function HeroCarousel({ banners = [], content }) {
+  const slides = banners.length ? banners : [{
+    image_url: '/ddkds-hero-banner.jpg',
+    small_label: content.hero_eyebrow,
+    heading: content.hero_title || 'DEADKIDS',
+    subtitle: content.hero_story,
+    button_text: '',
+    button_link: '/shop'
+  }];
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const hasMultiple = slides.length > 1;
+  const autoplay = content.hero_autoplay_enabled !== false && content.hero_autoplay_enabled !== 'false';
+  const go = dir => setActive(index => (index + dir + slides.length) % slides.length);
+  useEffect(() => {
+    if (!hasMultiple || !autoplay || paused) return;
+    const timer = setInterval(() => go(1), 5200);
+    return () => clearInterval(timer);
+  }, [hasMultiple, autoplay, paused, slides.length]);
+  return <section className="hero premium-hero brand-hero dbtk-hero hero-carousel" onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}>
+    {slides.map((slide, index) => <img key={slide.id || slide.image_url || index} className={`dbtk-hero-img hero-slide ${index===active?'active':''}`} src={heroAsset(slide.image_url)} alt={slide.heading || 'DDKDS CLO streetwear hero banner'} loading={index===0?'eager':'lazy'} decoding="async"/>)}
+    <div className="dbtk-hero-overlay"/>
+    <div className="dbtk-hero-content reveal">
+      <p className="eyebrow">{slides[active]?.small_label || content.hero_eyebrow || 'LUXURY / Y2K / STREETWEAR'}</p>
+      <h1 className="glitch" data-text={slides[active]?.heading || content.hero_title || 'DEADKIDS'}>{slides[active]?.heading || content.hero_title || 'DEADKIDS'}</h1>
+      <p className="brand-story">{slides[active]?.subtitle || content.hero_story}</p>
+      {slides[active]?.button_text && <Link className="btn primary hero-banner-btn" to={slides[active]?.button_link || '/shop'}>{slides[active].button_text}</Link>}
+    </div>
+    {hasMultiple && <div className="hero-carousel-controls" aria-label="Hero banner controls">
+      <button type="button" aria-label="Previous hero image" onClick={()=>go(-1)}><ChevronLeft size={20}/></button>
+      <div className="hero-carousel-indicators">{slides.map((slide,index)=><button type="button" key={slide.id || index} aria-label={`Show hero image ${index+1}`} className={index===active?'active':''} onClick={()=>setActive(index)}/>)}</div>
+      <button type="button" aria-label="Next hero image" onClick={()=>go(1)}><ChevronRight size={20}/></button>
+    </div>}
+  </section>;
+}
+
 function Home() {
-  const [products, setProducts] = useState([]); const [reviews, setReviews] = useState([]); const [content,setContent]=useState(siteDefaults);
+  const [products, setProducts] = useState([]); const [reviews, setReviews] = useState([]); const [content,setContent]=useState(siteDefaults); const [heroBanners,setHeroBanners]=useState([]);
   useEffect(() => {
     async function loadHome(){
-      const [featuredProducts, approvedReviews, siteContent] = await Promise.all([
+      const [featuredProducts, approvedReviews, siteContent, banners] = await Promise.all([
         request('/api/products?featured=1'),
         request('/api/reviews'),
-        request('/api/site-content').catch(()=>({}))
+        request('/api/site-content').catch(()=>({})),
+        request('/api/hero-banners').catch(()=>[])
       ]);
       setProducts(featuredProducts);
       setReviews(approvedReviews);
       setContent({...siteDefaults,...siteContent});
+      setHeroBanners(Array.isArray(banners) ? banners : []);
     }
     loadHome().catch(console.error);
   }, []);
-  const heroImage = content.hero_banner_image ? asset(content.hero_banner_image) : '/ddkds-hero-banner.jpg';
   return <main>
-    <section className="hero premium-hero brand-hero dbtk-hero">
-      <img className="dbtk-hero-img" src={heroImage} alt="DDKDS CLO streetwear hero banner" loading="eager" decoding="async"/>
-      <div className="dbtk-hero-overlay"/>
-      <div className="dbtk-hero-content reveal">
-        <p className="eyebrow">{content.hero_eyebrow || 'LUXURY / Y2K / STREETWEAR'}</p>
-        <h1 className="glitch" data-text={content.hero_title || 'DEADKIDS'}>{content.hero_title || 'DEADKIDS'}</h1>
-        <p className="brand-story">{content.hero_story}</p>
-      </div>
-    </section>
+    <HeroCarousel banners={heroBanners} content={content}/>
     <Marquee/>
     <FeaturedVisualRunway products={products}/>
     <SectionWithMotionBackground section="countdown"><section className="latest-drop-section"><div className="section-head"><p className="eyebrow">LATEST DROP</p><h2>{content.latest_drop_title || 'DDKDS REDLINE COLLECTION'}</h2><p className="muted">{content.latest_drop_description || siteDefaults.latest_drop_description}</p></div><div className="grid four">{products.slice(0,4).map(p => <ProductCard key={p.id} product={p}/>)}</div></section></SectionWithMotionBackground>
@@ -611,7 +641,7 @@ function PageTitle({title,sub}){const [c,setC]=useState(siteDefaults);useEffect(
 function Footer(){const [c,setC]=useState(siteDefaults); useEffect(()=>{request('/api/site-content').then(x=>setC({...siteDefaults,...x})).catch(()=>{})},[]); return <SectionWithMotionBackground section="footer"><footer><div className="footer-main"><strong>{c.footer_brand}</strong><p>{c.footer_text}</p></div><Link className="footer-admin-link" to="/admin/login" aria-label={c.footer_admin_label}>{c.footer_admin_label}</Link></footer></SectionWithMotionBackground>}
 
 function AdminLogin(){const nav=useNavigate(); const [email,setEmail]=useState('admin@deadkids.com'),[password,setPassword]=useState('admin123'),[err,setErr]=useState(''); const login=async e=>{e.preventDefault();try{const r=await request('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})});localStorage.setItem('deadkids_token',r.token);nav('/admin')}catch(e){setErr(e.message === 'Failed to fetch' ? 'Backend is not connected. Please run npm run dev and make sure the server says DDKDS CLO API running on http://localhost:5000.' : e.message)}}; return <main className="admin-login-page"><SectionWithMotionBackground section="login"><div className="admin-login-top"><Link to="/" className="btn ghost">← Back to Customer Shop</Link><span>Separate Admin Portal</span></div><form className="form card login" onSubmit={login}><p className="eyebrow">DDKDS ADMIN</p><h1>Admin Login</h1><p className="muted">Manage products, reviews, messages, and website content.</p><input value={email} onChange={e=>setEmail(e.target.value)}/><input type="password" value={password} onChange={e=>setPassword(e.target.value)}/>{err&&<p className="red">{err}</p>}<button className="btn primary">Login</button></form></SectionWithMotionBackground></main>}
-function AdminLayout(){const nav=useNavigate(); useEffect(()=>{if(!localStorage.getItem('deadkids_token')) nav('/admin/login', { replace:true });},[nav]); const logout=()=>{localStorage.removeItem('deadkids_token');nav('/admin/login')}; return <main className="admin"><aside><h2>DDKDS Admin</h2><Link className="admin-store-link" to="/">View Store</Link><NavLink to="/admin" end><LayoutDashboard/> Dashboard</NavLink><NavLink to="/admin/products"><Package/> Products</NavLink><NavLink to="/admin/backgrounds"><Sparkles/> Backgrounds</NavLink><NavLink to="/admin/reviews"><Star/> Reviews</NavLink><NavLink to="/admin/messages"><MessageSquare/> Messages</NavLink><NavLink to="/admin/settings"><Settings/> Settings</NavLink><button onClick={logout}><LogOut/> Logout</button></aside><section className="admin-content"><Routes><Route index element={<AdminDashboard/>}/><Route path="products" element={<AdminProducts/>}/><Route path="backgrounds" element={<BackgroundManager/>}/><Route path="reviews" element={<AdminReviews/>}/><Route path="messages" element={<AdminMessages/>}/><Route path="settings" element={<AdminSettings/>}/></Routes></section></main>}
+function AdminLayout(){const nav=useNavigate(); useEffect(()=>{if(!localStorage.getItem('deadkids_token')) nav('/admin/login', { replace:true });},[nav]); const logout=()=>{localStorage.removeItem('deadkids_token');nav('/admin/login')}; return <main className="admin"><aside><h2>DDKDS Admin</h2><Link className="admin-store-link" to="/">View Store</Link><NavLink to="/admin" end><LayoutDashboard/> Dashboard</NavLink><NavLink to="/admin/products"><Package/> Products</NavLink><NavLink to="/admin/hero-banners"><ImagePlus/> Hero Banner</NavLink><NavLink to="/admin/backgrounds"><Sparkles/> Backgrounds</NavLink><NavLink to="/admin/reviews"><Star/> Reviews</NavLink><NavLink to="/admin/messages"><MessageSquare/> Messages</NavLink><NavLink to="/admin/settings"><Settings/> Settings</NavLink><button onClick={logout}><LogOut/> Logout</button></aside><section className="admin-content"><Routes><Route index element={<AdminDashboard/>}/><Route path="products" element={<AdminProducts/>}/><Route path="hero-banners" element={<AdminHeroBanners/>}/><Route path="backgrounds" element={<BackgroundManager/>}/><Route path="reviews" element={<AdminReviews/>}/><Route path="messages" element={<AdminMessages/>}/><Route path="settings" element={<AdminSettings/>}/></Routes></section></main>}
 function AdminDashboard(){
   const defaultStats={products:0,reviews:0};
   const [s,setS]=useState(defaultStats),[err,setErr]=useState(''),[loading,setLoading]=useState(true);
@@ -742,6 +772,22 @@ function AdminProductTable({rows,onEdit,onDelete,onReorder}){
   };
   return <div className="table admin-table-wrap"><table><thead><tr><th>Sort</th><th>Image</th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map((r,index)=>{const img=(r.images&&r.images[0])||r.teaser_image||'/placeholder/product-1.svg';return <tr key={r.id} draggable={!!onReorder} onDragStart={()=>setDragId(r.id)} onDragOver={e=>onReorder&&e.preventDefault()} onDrop={()=>dropOn(r.id)} className={dragId===r.id?'dragging-row':''}><td><div className="sort-controls"><span className="drag-handle">☰</span><button type="button" disabled={!onReorder||index===0} onClick={()=>move(index,-1)}>↑</button><button type="button" disabled={!onReorder||index===rows.length-1} onClick={()=>move(index,1)}>↓</button></div></td><td><img className="table-thumb" src={asset(img)} loading="lazy" decoding="async" alt="Preview"/><small>{(r.images||[]).length} photo{(r.images||[]).length===1?'':'s'}</small></td><td><strong>{r.name}</strong><small>{r.description}</small></td><td>{r.category}</td><td>{pesos(r.price)}</td><td>{r.stock}</td><td><span className="badge">{r.status}</span></td><td><div className="row-actions"><button type="button" onClick={()=>onEdit(r)}>Edit</button><button type="button" className="danger-btn" onClick={()=>onDelete(r.id)}>Delete</button></div></td></tr>})}</tbody></table></div>}
 function AdminTable({rows,onDelete,onEdit}){return <div className="card table"><table><tbody>{rows.map(r=>{const img=(r.images&&r.images[0])||r.teaser_image||'/placeholder/product-1.svg';return <tr key={r.id}><td><img className="table-thumb" src={asset(img)} loading="lazy" decoding="async" alt="Preview"/></td><td>{r.name}</td><td>{r.category}</td><td>{pesos(r.price)}</td><td>{r.status}</td><td><div className="row-actions">{onEdit&&<button onClick={()=>onEdit(r)}>Edit</button>}<button className="danger-btn" onClick={()=>onDelete(r.id)}>Delete</button></div></td></tr>})}</tbody></table></div>}
+
+const blankHeroBanner = () => ({ image_url:'', small_label:'LUXURY / Y2K / STREETWEAR', heading:'DEADKIDS', subtitle:'', button_text:'', button_link:'/shop', enabled:true });
+function AdminHeroBanners(){
+  const [rows,setRows]=useState([]),[form,setForm]=useState(blankHeroBanner()),[editing,setEditing]=useState(null),[err,setErr]=useState(''),[msg,setMsg]=useState(''),[settings,setSettings]=useState({hero_autoplay_enabled:true});
+  const load=async()=>{setErr('');try{const [banners,content]=await Promise.all([request('/api/admin/hero-banners'),request('/api/site-content').catch(()=>({}))]);setRows(Array.isArray(banners)?banners:[]);setSettings({hero_autoplay_enabled:content.hero_autoplay_enabled !== false && content.hero_autoplay_enabled !== 'false'});}catch(e){setErr(e.message)}};
+  useEffect(()=>{load()},[]);
+  const reset=()=>{setEditing(null);setForm(blankHeroBanner());setMsg('');setErr('')};
+  const save=async e=>{e.preventDefault();setErr('');setMsg('');try{const payload={...form,enabled:!!form.enabled};if(editing){await request(`/api/admin/hero-banners/${editing}`,{method:'PUT',body:JSON.stringify(payload)});setMsg('Hero banner updated.')}else{await request('/api/admin/hero-banners',{method:'POST',body:JSON.stringify(payload)});setMsg('Hero banner added.')}await load();reset();}catch(error){setErr(error.message)}};
+  const saveAutoplay=async checked=>{setSettings({hero_autoplay_enabled:checked});try{await request('/api/site-content',{method:'PUT',body:JSON.stringify({hero_autoplay_enabled:checked})});setMsg('Autoplay setting saved.')}catch(e){setErr(e.message)}};
+  const edit=row=>{setEditing(row.id);setForm({...blankHeroBanner(),...row,enabled:!!row.enabled});window.scrollTo({top:0,behavior:'smooth'})};
+  const del=async id=>{if(!confirm('Delete this hero banner?'))return;setErr('');setMsg('');try{await request(`/api/admin/hero-banners/${id}`,{method:'DELETE'});setMsg('Hero banner deleted.');load();}catch(e){setErr(e.message)}};
+  const toggle=async row=>{try{await request(`/api/admin/hero-banners/${row.id}`,{method:'PUT',body:JSON.stringify({...row,enabled:!row.enabled})});load();}catch(e){setErr(e.message)}};
+  const setMain=async row=>{try{const ordered=[row,...rows.filter(item=>item.id!==row.id)];await request('/api/admin/hero-banners/reorder/list',{method:'PUT',body:JSON.stringify({ids:ordered.map(item=>item.id)})});if(!row.enabled)await request(`/api/admin/hero-banners/${row.id}`,{method:'PUT',body:JSON.stringify({...row,enabled:true,sort_order:1})});setMsg('Main hero banner set.');load();}catch(e){setErr(e.message)}};
+  const move=(index,dir)=>{const to=index+dir;if(to<0||to>=rows.length)return;const next=[...rows];[next[index],next[to]]=[next[to],next[index]];setRows(next);request('/api/admin/hero-banners/reorder/list',{method:'PUT',body:JSON.stringify({ids:next.map(item=>item.id)})}).catch(e=>setErr(e.message));};
+  return <><div className="admin-page-head"><div><p className="eyebrow">Homepage Visuals</p><h1>Hero Banner</h1><p className="muted">Upload one banner for a static hero, or enable multiple banners for a smooth carousel.</p></div><Link className="btn ghost" to="/">Preview Customer Site</Link></div>{err&&<AdminHelp title="Hero banner needs attention">{err}</AdminHelp>}{msg&&<p className="form-message">{msg}</p>}<div className="card hero-admin-control"><label className="check-row"><input type="checkbox" checked={!!settings.hero_autoplay_enabled} onChange={e=>saveAutoplay(e.target.checked)}/> Autoplay hero carousel when multiple banners are active</label></div><form className="form card admin-editor hero-banner-editor" onSubmit={save}><div className="form-title-row"><div><p className="eyebrow">{editing?'Edit Banner':'New Banner'}</p><h2>{editing?'Edit hero image':'Add hero image'}</h2></div>{editing&&<button type="button" className="btn ghost" onClick={reset}>Cancel Edit</button>}</div><AdminImageUploader label="Upload hero banner image" images={form.image_url} onChange={image_url=>setForm({...form,image_url})}/>{form.image_url&&<div className="hero-banner-preview"><img src={heroAsset(form.image_url)} alt="Hero preview"/><div><span>{form.small_label}</span><strong>{form.heading}</strong><p>{form.subtitle}</p></div></div>}<div className="form-grid"><Field label="Small label"><input value={form.small_label||''} onChange={e=>setForm({...form,small_label:e.target.value})}/></Field><Field label="Heading"><input value={form.heading||''} onChange={e=>setForm({...form,heading:e.target.value})}/></Field></div><Field label="Subtitle / short story"><textarea value={form.subtitle||''} onChange={e=>setForm({...form,subtitle:e.target.value})}/></Field><div className="form-grid"><Field label="Button text optional"><input value={form.button_text||''} onChange={e=>setForm({...form,button_text:e.target.value})}/></Field><Field label="Button link"><input value={form.button_link||''} onChange={e=>setForm({...form,button_link:e.target.value})}/></Field></div><label className="check-row"><input type="checkbox" checked={!!form.enabled} onChange={e=>setForm({...form,enabled:e.target.checked})}/> Show this hero image on the customer homepage</label><button className="btn primary">{editing?'Save Hero Banner':'Add Hero Banner'}</button></form><div className="grid two hero-banner-admin-grid">{rows.map((row,index)=><div className="card hero-admin-card" key={row.id}><img src={heroAsset(row.image_url)} alt={row.heading || 'Hero banner'} loading="lazy" decoding="async"/><div className="between"><div><span className="badge">{row.enabled?'Active':'Off'}</span><h3>{row.heading || 'Untitled banner'}</h3><p className="muted">{row.small_label || 'No small label'}</p></div><strong>#{index+1}</strong></div><p>{row.subtitle}</p><div className="row-actions"><button type="button" disabled={index===0} onClick={()=>move(index,-1)}>Move Up</button><button type="button" disabled={index===rows.length-1} onClick={()=>move(index,1)}>Move Down</button><button type="button" onClick={()=>setMain(row)}>Set Main</button><button type="button" onClick={()=>toggle(row)}>{row.enabled?'Turn Off':'Turn On'}</button><button type="button" onClick={()=>edit(row)}>Edit</button><button type="button" className="danger-btn" onClick={()=>del(row.id)}>Delete</button></div></div>)}</div>{!rows.length&&<div className="card"><h3>No hero banners yet</h3><p className="muted">Add one image to keep a static hero. Add more active images to create a carousel.</p></div>}</>
+}
 function AdminReviews(){const [rows,setRows]=useState([]),[filter,setFilter]=useState('All'); const load=()=>request('/api/admin/reviews').then(setRows); useEffect(load,[]); const upd=async(r,changes)=>{await request(`/api/reviews/${r.id}`,{method:'PUT',body:JSON.stringify({...r,...changes})});load()}; const del=async id=>{if(confirm('Delete this review?')){await request(`/api/reviews/${id}`,{method:'DELETE'});load()}}; const visible=rows.filter(r=>filter==='All'||r.status===filter); return <><div className="admin-page-head"><div><p className="eyebrow">Customer Feedback</p><h1>Reviews & Ratings</h1><p className="muted">Approve customer reviews before they appear on the customer website.</p></div><select value={filter} onChange={e=>setFilter(e.target.value)}><option>All</option><option>Pending</option><option>Approved</option><option>Hidden</option></select></div><div className="review-admin-summary grid three"><div className="card"><h3>{rows.length}</h3><p>Total reviews</p></div><div className="card"><h3>{rows.filter(r=>r.status==='Pending').length}</h3><p>Waiting approval</p></div><div className="card"><h3>{rows.filter(r=>r.status==='Approved').length}</h3><p>Live reviews</p></div></div><div className="grid two admin-review-list">{visible.map(r=><div className="card admin-review-card" key={r.id}><div className="between"><div><h3>{r.customer_name}</h3><p className="muted">{r.product_name || 'General review'}</p></div><span className={`badge status-${String(r.status).toLowerCase()}`}>{r.status}</span></div><RatingStars value={r.rating||5} readOnly/><p>{r.comment}</p><div className="admin-review-actions"><select value={r.status} onChange={e=>upd(r,{status:e.target.value})}><option>Pending</option><option>Approved</option><option>Hidden</option></select><label className="check-row"><input type="checkbox" checked={!!r.featured} onChange={e=>upd(r,{featured:e.target.checked})}/> Feature</label><button className="danger-btn" onClick={()=>del(r.id)}>Delete</button></div></div>)}</div>{!visible.length&&<p className="muted">No reviews in this filter.</p>}</>}
 function AdminMessages(){const [rows,setRows]=useState([]),[loading,setLoading]=useState(false),[err,setErr]=useState(''),[msg,setMsg]=useState(''); const load=async()=>{setLoading(true);setErr('');try{setRows(await request('/api/contact'))}catch(e){setErr(e.message)}finally{setLoading(false)}}; useEffect(()=>{load()},[]); const mark=async(m,status)=>{setErr('');setMsg('');try{await request(`/api/contact/${m.id}`,{method:'PUT',body:JSON.stringify({status})});setMsg('Message updated.');load()}catch(e){setErr(e.message)}}; const del=async id=>{if(confirm('Delete this message?')){setErr('');setMsg('');try{await request(`/api/contact/${id}`,{method:'DELETE'});setMsg('Message deleted.');load()}catch(e){setErr(e.message)}}}; return <><div className="admin-page-head"><div><p className="eyebrow">Inbox</p><h1>Contact Messages</h1><p className="muted">Read, mark, and delete customer messages.</p></div><button className="btn ghost" type="button" onClick={load}>Refresh</button></div>{err&&<AdminHelp title="Messages need attention">{err}</AdminHelp>}{msg&&<p className="form-message">{msg}</p>}{loading&&<p className="muted">Loading messages...</p>}{!loading&&!rows.length&&<div className="card"><h3>No messages yet</h3><p className="muted">Customer contact form messages will appear here.</p></div>}<div className="grid two">{rows.map(m=><div className="card" key={m.id}><div className="between"><h3>{m.name||'No name'}</h3><span className="badge">{m.status||'Unread'}</span></div><p className="muted">{m.email||'No email provided'}</p><p>{m.message}</p><div className="row-actions"><button type="button" onClick={()=>mark(m,(m.status||'Unread')==='Unread'?'Read':'Unread')}>Mark {(m.status||'Unread')==='Unread'?'Read':'Unread'}</button><button type="button" className="danger-btn" onClick={()=>del(m.id)}>Delete</button></div></div>)}</div></>}
 function extractYouTubeId(value){
