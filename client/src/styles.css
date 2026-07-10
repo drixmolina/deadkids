@@ -4339,8 +4339,8 @@ body.nav-hidden .customer-app .dbtk-nav,
 }
 .compact-nav-actions{
   position:absolute !important;
-  right:clamp(14px,2.4vw,32px) !important;
-  top:14px !important;
+  right:8px !important;
+  top:8px !important;
   justify-self:end;
   display:flex !important;
   align-items:center;
@@ -4596,8 +4596,8 @@ body.nav-hidden .customer-app .dbtk-nav,
     height:40px;
   }
   .compact-nav-actions{
-    right:10px !important;
-    top:13px !important;
+    right:8px !important;
+    top:8px !important;
     gap:7px !important;
   }
   .compact-nav-actions .icon-btn,
