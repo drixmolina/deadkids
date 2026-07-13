@@ -4762,3 +4762,27 @@ body.nav-hidden .customer-app .dbtk-nav,
   color:#fff !important;
   border-color:rgba(255,255,255,.18) !important;
 }
+
+/* Customer polish: remove leftover white/circular UI marks */
+.customer-app .wishlist,
+.customer-app .account-avatar,
+.customer-app .upload-preview button,
+.customer-app .back-to-top{
+  border-radius:10px !important;
+}
+.customer-app .swatches span{
+  width:14px !important;
+  height:8px !important;
+  border-radius:3px !important;
+  border-color:rgba(255,255,255,.18) !important;
+}
+.customer-app .compact-nav-actions .cart-pill span{
+  border-radius:6px !important;
+  right:-3px !important;
+  top:-4px !important;
+  min-width:16px !important;
+  height:16px !important;
+}
+.customer-app .visual-runway-head > span{
+  display:none !important;
+}
