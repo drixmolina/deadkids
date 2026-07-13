@@ -4786,3 +4786,13 @@ body.nav-hidden .customer-app .dbtk-nav,
 .customer-app .visual-runway-head > span{
   display:none !important;
 }
+
+/* Hero is image-only now: remove the old hero text controls from admin too. */
+.hero-banner-editor > .form-grid,
+.hero-banner-editor > .field-block,
+.hero-banner-preview div,
+.hero-admin-card .between h3,
+.hero-admin-card .between .muted,
+.hero-admin-card > p{
+  display:none !important;
+}

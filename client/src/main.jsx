@@ -356,14 +356,8 @@ function HeroCarousel({ banners = [], content }) {
     return () => clearInterval(timer);
   }, [hasMultiple, autoplay, paused, slides.length]);
   return <section className="hero premium-hero brand-hero dbtk-hero hero-carousel" onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}>
-    {slides.map((slide, index) => <img key={slide.id || slide.image_url || index} className={`dbtk-hero-img hero-slide ${index===active?'active':''}`} src={heroAsset(slide.image_url)} alt={slide.heading || 'DDKDS CLO streetwear hero banner'} loading={index===0?'eager':'lazy'} decoding="async"/>)}
+    {slides.map((slide, index) => <img key={slide.id || slide.image_url || index} className={`dbtk-hero-img hero-slide ${index===active?'active':''}`} src={heroAsset(slide.image_url)} alt="DDKDS CLO streetwear hero banner" loading={index===0?'eager':'lazy'} decoding="async"/>)}
     <div className="dbtk-hero-overlay"/>
-    <div className="dbtk-hero-content reveal">
-      <p className="eyebrow">{slides[active]?.small_label || content.hero_eyebrow || 'LUXURY / Y2K / STREETWEAR'}</p>
-      <h1 className="glitch" data-text={slides[active]?.heading || content.hero_title || 'DEADKIDS'}>{slides[active]?.heading || content.hero_title || 'DEADKIDS'}</h1>
-      <p className="brand-story">{slides[active]?.subtitle || content.hero_story}</p>
-      {slides[active]?.button_text && <Link className="btn primary hero-banner-btn" to={slides[active]?.button_link || '/shop'}>{slides[active].button_text}</Link>}
-    </div>
     {hasMultiple && <div className="hero-carousel-controls" aria-label="Hero banner controls">
       <button type="button" aria-label="Previous hero image" onClick={()=>go(-1)}><ChevronLeft size={20}/></button>
       <div className="hero-carousel-indicators">{slides.map((slide,index)=><button type="button" key={slide.id || index} aria-label={`Show hero image ${index+1}`} className={index===active?'active':''} onClick={()=>setActive(index)}/>)}</div>
