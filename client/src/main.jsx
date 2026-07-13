@@ -409,7 +409,6 @@ function FeaturedVisualRunway({ products=[] }) {
         <p className="eyebrow">MODEL / DESIGN / DETAIL</p>
         <h2>Featured Visuals</h2>
       </div>
-      <span>Moving lookbook</span>
     </div>
     <div className="visual-runway-track-wrap">
       <div className="visual-runway-track">
