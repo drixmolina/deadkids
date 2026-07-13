@@ -220,15 +220,20 @@ app.get('/api/auth/google', (req, res, next) => {
   passport.authenticate('google', { scope: ['profile', 'email'], session: false })(req, res, next);
 });
 
-app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL || 'http://localhost:5173'}/account?login=google_failed`, session: false }),
-  (req, res) => {
-    const token = customerToken(req.user);
+app.get('/api/auth/google/callback', (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err, user) => {
+    if (err || !user) {
+      const url = new URL('/account', process.env.CLIENT_URL || 'http://localhost:5173');
+      url.searchParams.set('login', 'google_failed');
+      res.redirect(url.toString());
+      return;
+    }
+    const token = customerToken(user);
     const url = new URL('/auth/success', process.env.CLIENT_URL || 'http://localhost:5173');
     url.searchParams.set('token', token);
     res.redirect(url.toString());
-  }
-);
+  })(req, res, next);
+});
 
 app.post('/api/customer/register', (req, res) => {
   const name = safeString(req.body.name);

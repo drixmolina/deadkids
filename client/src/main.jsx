@@ -618,11 +618,17 @@ function GoogleSignInButton({ onClick, label }) {
 function Account() {
   const { customer, signedIn, register, login, googleLogin, logout } = useCustomer();
   const nav = useNavigate();
+  const location = useLocation();
   const [mode,setMode]=useState('login');
   const [form,setForm]=useState({name:'',email:'',password:''});
   const [content,setContent]=useState(siteDefaults);
   const [err,setErr]=useState(''),[msg,setMsg]=useState('');
   useEffect(()=>{request('/api/site-content').then(x=>setContent({...siteDefaults,...x})).catch(()=>{})},[]);
+  useEffect(()=>{
+    if (new URLSearchParams(location.search).get('login') === 'google_failed') {
+      setErr('Google sign in failed. Check the Google Client Secret and Authorized Redirect URI in Google Cloud.');
+    }
+  },[location.search]);
   const submit=async e=>{
     e.preventDefault();
     setErr(''); setMsg('');
